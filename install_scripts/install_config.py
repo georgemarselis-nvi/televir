@@ -14,6 +14,9 @@ class TelevirLayout:
     install_ribo16s = True
     install_refseq_16s = True
 
+    ## Filter mapping
+    install_bwa_filter = True
+
     # hosts ### CHECK HOST LIBRARY FILE FOR AVAILABLE HOSTS ###
     HOSTS_TO_INSTALL = [
         "hg38",
@@ -35,10 +38,8 @@ class TelevirLayout:
     ]
 
     # host mappers
-    install_bowtie2_remap = True
     install_bowtie2_depletion = False
     install_bwa_host = True
-    install_bwa_filter = True
 
     # classification software.
     install_metaphlan = False
@@ -110,3 +111,11 @@ class TelevirLayout:
         "install_blast": ("blast", "genome"),
         "install_fastviromeexplorer": ("fastviromeexplorer", "viral"),
     }
+
+
+    @property
+    def install_hosts(self):
+        if self.install_bwa_host or self.install_bowtie2_depletion:
+            return True
+
+        return False

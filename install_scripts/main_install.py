@@ -274,6 +274,12 @@ class main_setup:
         download prot sequences and get taxids.
         """
 
+        ## DOWNLOAD HOSTS
+        if self.layout.install_hosts:
+            for host in self.layout.HOSTS_TO_INSTALL:
+                _success = self.wdir.download_host(host)
+                logging.info(f"host {host} download success: {_success}")
+
         if self.layout.install_request_sequences:
             request_success = self.wdir.install_requests()
             if request_success:
@@ -972,7 +978,7 @@ class main_setup:
                         binary_name="bwa",
                     )
                 )
-                db_cat, db_name = self.layout.DATABASE_NAMES.get("install_bwa_filter", ("bwa", fname))
+                db_cat, _db_name = self.layout.DATABASE_NAMES.get("install_bwa_filter", ("bwa", fname))
                 self.utilities.add_database(
                     self.utilities.database_item(
                         name=fname,
