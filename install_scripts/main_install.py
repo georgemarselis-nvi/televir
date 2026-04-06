@@ -1310,8 +1310,6 @@ class main_setup:
 
                 sofprep = self.db_generate_intrinsic(self.wdir)
 
-
-
                 self.wdir.fastas["nuc"] = process_nuc_fasta_dict(
                     self.wdir.fastas["nuc"], max_file_size=4000000000
                 )

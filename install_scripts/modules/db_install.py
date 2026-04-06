@@ -395,7 +395,7 @@ class setup_dl:
 
         if os.path.isfile(filepath):
             if self.verify_file_integrity(filepath, filename):
-                self.fastas[db_key][fname] = filepath
+                self.fastas[db_key][fname] = [filepath]
                 self.db_versions[fname] = {
                     "version": version or self.get_file_mod_date(filepath),
                     "source_url": source_url,
