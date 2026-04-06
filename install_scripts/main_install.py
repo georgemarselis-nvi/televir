@@ -1188,6 +1188,8 @@ class main_setup:
 
         # install nuc databases using local files.
         for fname, fd_list in prepdl.fastas["nuc"].items():
+            print(f"Processing nuc database: {fname}")
+            print(f"File paths: {fd_list}")
             for fpath in fd_list:
                 if os.path.getsize(fpath) > 15000000000:
                     continue
@@ -1308,14 +1310,17 @@ class main_setup:
 
                 sofprep = self.db_generate_intrinsic(self.wdir)
 
+
+
+                self.wdir.fastas["nuc"] = process_nuc_fasta_dict(
+                    self.wdir.fastas["nuc"], max_file_size=4000000000
+                )
+
                 self.db_generate_external(
                     self.wdir,
                     sofprep,
                 )
 
-                self.wdir.fastas["nuc"] = process_nuc_fasta_dict(
-                    self.wdir.fastas["nuc"], max_file_size=4000000000
-                )
 
                 if self.layout.check_index_files:
                     self.wdir.index_nuc_fasta_files()
