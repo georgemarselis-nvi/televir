@@ -280,19 +280,66 @@ class main_setup:
                 _success = self.wdir.download_host(host)
                 logging.info(f"host {host} download success: {_success}")
 
-        if self.layout.install_ribo16s:
-            ribo16s_entry = get_db_entry("ribosomal_rna", "refseq_16s")
-            ribo16s_success = self.wdir.dl_filter_file(ribo16s_entry)
-            logging.info(f"Ribo 16S download success: {ribo16s_success}")
-            ribo16s_desc = ribo16s_entry.get("description", "")
+        if self.layout.install_refseq_16s:
+            refseq_16s_entry = get_db_entry("ribosomal_rna", "refseq_16s")
+            refseq_16s_success = self.wdir.dl_filter_file(refseq_16s_entry, fname="refseq_16s", db_key="nuc")
+            logging.info(f"RefSeq 16S download success: {refseq_16s_success}")
+            refseq_16s_desc = refseq_16s_entry.get("description", "")
+            refseq_16s_path = self.wdir.fastas["nuc"].get("refseq_16s", [""])[0]
+            db_ver = self.wdir.db_versions.get("refseq_16s", {})
             self.utilities.add_database(
                 self.utilities.database_item(
                     name="refseq_16s",
-                    path=self.wdir.fastas["nuc"].get("refseq_16s", [""])[0],
-                    installed=ribo16s_success,
-                    software="refseq",
+                    path=refseq_16s_path,
+                    installed=refseq_16s_success,
+                    software="ribosomal_rna",
                     db_type="nuc",
-                    description=ribo16s_desc,
+                    version=db_ver.get("version"),
+                    source_url=db_ver.get("source_url"),
+                    file_mod_date=db_ver.get("file_mod_date"),
+                    description=refseq_16s_desc,
+                )
+            )
+
+        if self.layout.install_ribo16s:
+            silva_16s_entry = get_db_entry("ribosomal_rna", "silva_16s")
+            silva_16s_success = self.wdir.dl_filter_file(silva_16s_entry, fname="silva_16s", db_key="nuc")
+            logging.info(f"SILVA 16S download success: {silva_16s_success}")
+            silva_16s_desc = silva_16s_entry.get("description", "")
+            silva_16s_path = self.wdir.fastas["nuc"].get("silva_16s", [""])[0]
+            db_ver = self.wdir.db_versions.get("silva_16s", {})
+            self.utilities.add_database(
+                self.utilities.database_item(
+                    name="silva_16s",
+                    path=silva_16s_path,
+                    installed=silva_16s_success,
+                    software="ribosomal_rna",
+                    db_type="nuc",
+                    version=db_ver.get("version"),
+                    source_url=db_ver.get("source_url"),
+                    file_mod_date=db_ver.get("file_mod_date"),
+                    description=silva_16s_desc,
+                )
+            )
+
+        if self.layout.install_ncbi_16s:
+            ncbi_16s_entry = get_db_entry("ribosomal_rna", "ncbi_16s")
+            ncbi_16s_success = self.wdir.dl_filter_file(ncbi_16s_entry, fname="ncbi_16s", db_key="nuc")
+            logging.info(f"NCBI 16S download success: {ncbi_16s_success}")
+            ncbi_16s_desc = ncbi_16s_entry.get("description", "")
+            ncbi_16s_path = self.wdir.fastas["nuc"].get("ncbi_16s", [""])[0]
+            db_ver = self.wdir.db_versions.get("ncbi_16s", {})
+            self.utilities.add_database(
+                self.utilities.database_item(
+                    name="ncbi_16s",
+                    path=ncbi_16s_path,
+                    installed=ncbi_16s_success,
+                    software="ribosomal_rna",
+                    db_type="nuc",
+                    version=db_ver.get("version"),
+                    source_url=db_ver.get("source_url"),
+                    file_mod_date=db_ver.get("file_mod_date"),
+                    description=ncbi_16s_desc,
                 )
             )
 
@@ -434,7 +481,8 @@ class main_setup:
             )
 
         if self.layout.install_virosaurus:
-            success_virosaurus = self.wdir.virosaurus_dl()
+            virosaurus_entry = get_db_entry("nucleotide", "virosaurus")
+            success_virosaurus = self.wdir.dl_filter_file(virosaurus_entry, fname="virosaurus", db_key="nuc")
             if success_virosaurus:
                 self.installed_databases.append(
                     self.database_install_string("virosaurus")
@@ -442,9 +490,8 @@ class main_setup:
 
             virosaurus_path = self.wdir.fastas.get("nuc", {}).get("virosaurus", [""])[0]
             db_ver = self.wdir.db_versions.get("virosaurus", {})
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_virosaurus", ("protein", "virosaurus"))
-            db_entry = get_db_entry(db_category, db_name)
-            db_desc = db_entry.get("description") if db_entry else None
+            db_category, db_name = self.layout.DATABASE_NAMES.get("install_virosaurus", ("nucleotide", "virosaurus"))
+            db_desc = virosaurus_entry.get("description") if virosaurus_entry else None
             self.utilities.add_database(
                 self.utilities.database_item(
                     name=db_name,
@@ -460,7 +507,8 @@ class main_setup:
             )
 
         if self.layout.install_rvdb:
-            success_rvdb = self.wdir.RVDB_dl()
+            rvdb_entry = get_db_entry("protein", "rvdb")
+            success_rvdb = self.wdir.dl_filter_file(rvdb_entry, fname="rvdb", db_key="prot")
             if success_rvdb:
                 self.installed_databases.append(
                     self.database_install_string("rvdb")
@@ -469,8 +517,7 @@ class main_setup:
             rvdb_path = self.wdir.fastas.get("prot", {}).get("rvdb", "")
             db_ver = self.wdir.db_versions.get("rvdb", {})
             db_category, db_name = self.layout.DATABASE_NAMES.get("install_rvdb", ("protein", "rvdb"))
-            db_entry = get_db_entry(db_category, db_name)
-            db_desc = db_entry.get("description") if db_entry else None
+            db_desc = rvdb_entry.get("description") if rvdb_entry else None
             self.utilities.add_database(
                 self.utilities.database_item(
                     name=db_name,

@@ -366,20 +366,41 @@ class setup_dl:
                 else:
                     logging.info(f"{flname} already bgzipped and indexed.")
 
-    def dl_filter_file(self, dl_entry: dict):
+    def dl_filter_file(self, dl_entry: dict, fname: str = None, db_key: str = "filter"):
         """
         download generic filter file
+        
+        Args:
+            dl_entry: dict with url, filename (or file), description
+            fname: optional name for fastas dict key (defaults to filename without extension)
+            db_key: which fastas dict to use ("filter", "prot", "nuc")
         """
-        filename = dl_entry.get("filename", "")
+        filename = dl_entry.get("filename") or dl_entry.get("file", "")
         url = dl_entry.get("url", "")
+        version = dl_entry.get("version") or dl_entry.get("version_default", "")
+        
         if not filename or not url:
             logging.error("Invalid download entry.")
             return False
 
+        if "{version}" in url and version:
+            url = url.replace("{version}", version)
+            filename = filename.replace("{version}", version)
+
+        source_url = url
         filepath = self.seqdir + filename
+        
+        if fname is None:
+            fname = os.path.splitext(filename)[0]
+
         if os.path.isfile(filepath):
             if self.verify_file_integrity(filepath, filename):
-                self.fastas["filter"][filename] = filepath
+                self.fastas[db_key][fname] = filepath
+                self.db_versions[fname] = {
+                    "version": version or self.get_file_mod_date(filepath),
+                    "source_url": source_url,
+                    "file_mod_date": self.get_file_mod_date(filepath)
+                }
                 logging.info(f"{filename} found and verified.")
                 return True
             logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
@@ -393,129 +414,13 @@ class setup_dl:
             return False
 
         if self.verify_file_integrity(filepath, filename):
-            self.fastas["filter"][filename] = filepath
+            self.fastas[db_key][fname] = filepath
+            self.db_versions[fname] = {
+                "version": version or self.get_file_mod_date(filepath),
+                "source_url": source_url,
+                "file_mod_date": self.get_file_mod_date(filepath)
+            }
             logging.info(f"{filename} found and verified.")
-            return True
-        else:
-            logging.error(f"Downloaded {filename} is corrupted.")
-            return False
-
-    def refseq_16s_dl(self, fname="refseq_16s"):
-        """
-        download 16s from https://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/Bacteria/bacteria.16SrRNA.fna.gz
-        save to fastas["filter"]["16s"]
-        """
-        host = "ftp.ncbi.nlm.nih.gov"
-        source = "refseq/TargetedLoci/Bacteria/bacteria.16SrRNA.fna.gz"
-        filename = "bacteria.16SrRNA.fna.gz"
-        filepath = self.seqdir + filename
-        source_url = f"https://{host}/{source}"
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, filename):
-                self.fastas["filter"][fname] = filepath
-                self.db_versions[fname] = {
-                    "version": self.get_file_mod_date(filepath),
-                    "source_url": source_url,
-                    "file_mod_date": self.get_file_mod_date(filepath)
-                }
-                logging.info(f"{filename} found and verified.")
-                return True
-            logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
-
-        try:
-            subprocess.run(
-                ["wget", f"https://{host}/{source}", "-P", self.seqdir],
-                check=False,
-            )
-        except subprocess.CalledProcessError:
-            logging.info(f"{filename} not found.")
-            return False
-
-        if self.verify_file_integrity(filepath, filename):
-            self.fastas["filter"][fname] = filepath
-            self.db_versions[fname] = {
-                "version": self.get_file_mod_date(filepath),
-                "source_url": source_url,
-                "file_mod_date": self.get_file_mod_date(filepath)
-            }
-            return True
-        else:
-            logging.error(f"Downloaded {filename} is corrupted.")
-            return False
-
-    def silva_16s_dl(self, fname="silva_16s"):
-        """
-        download silva 16s from https://www.arb-silva.de/fileadmin/silva_databases/release_138_1/Exports/SILVA_138.1_LSURef_NR99_tax_silva.fasta.gz
-        save to fastas["filter"]["silva"]
-        """
-        host = "www.arb-silva.de"
-        source = "fileadmin/silva_databases/release_138_1/Exports/"
-        filename = "SILVA_138.1_LSURef_NR99_tax_silva.fasta.gz"
-        filepath = self.seqdir + filename
-        source_url = f"https://{host}/{source}{filename}"
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, filename):
-                self.fastas["filter"][fname] = filepath
-                self.db_versions[fname] = {
-                    "version": self.get_file_mod_date(filepath),
-                    "source_url": source_url,
-                    "file_mod_date": self.get_file_mod_date(filepath)
-                }
-                logging.info(f"{filename} found and verified.")
-                return True
-            logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
-
-        try:
-            subprocess.run(
-                ["wget", f"https://{host}/{source}{filename}", "-P", self.seqdir],
-                check=False,
-            )
-        except subprocess.CalledProcessError:
-            logging.info(f"{filename} not found.")
-            return False
-
-        if self.verify_file_integrity(filepath, filename):
-            self.fastas["filter"][fname] = filepath
-            self.db_versions[fname] = {
-                "version": self.get_file_mod_date(filepath),
-                "source_url": source_url,
-                "file_mod_date": self.get_file_mod_date(filepath)
-            }
-            return True
-        else:
-            logging.error(f"Downloaded {filename} is corrupted.")
-            return False
-
-    def ncbi_16s_dl(self, fname="ncbi_ribo16s"):
-        """
-        donwload 16s from https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz
-        save to fastas["filter"]["16s"]
-        """
-        host = "ftp.ncbi.nlm.nih.gov"
-        source = "blast/db/16S_ribosomal_RNA.tar.gz"
-        filename = "16S_ribosomal_RNA.tar.gz"
-        filepath = self.seqdir + filename
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, filename):
-                self.fastas["filter"][fname] = filepath
-                logging.info(f"{filename} found and verified.")
-                return True
-            logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
-
-        try:
-            subprocess.run(
-                ["wget", f"ftp://{host}/{source}", "-P", self.seqdir],
-                check=False,
-            )
-        except subprocess.CalledProcessError:
-            logging.info(f"{filename} not found.")
-            return False
-
-        if self.verify_file_integrity(filepath, filename):
-            self.fastas["filter"][fname] = filepath
             return True
         else:
             logging.error(f"Downloaded {filename} is corrupted.")
@@ -944,173 +849,6 @@ class setup_dl:
 
         os.system("rm {}".format(" ".join(fls)))
         subprocess.run([BGZIP_BIN, self.seqdir + outf])
-
-    def uniprot_dl(self, vs="90"):
-        """
-        download uniprot db.
-        :param vs: uniprot version.
-        :return:
-        """
-        fl = "https://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref{}.fasta.gz"
-        fl = fl.format(vs)
-        uniprot_file = os.path.basename(fl)
-        filepath = self.seqdir + uniprot_file
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, uniprot_file):
-                logging.info("uniref{}.fasta found and verified.".format(vs))
-            else:
-                logging.warning("uniref{}.fasta exists but is corrupted. Re-downloading...".format(vs))
-        elif self.test:
-            logging.info("uniref{}.fasta not found.".format(vs))
-            return False
-        else:
-            logging.info("uniref{}.fasta not found. downloading...".format(vs))
-            subprocess.run(["wget", fl, "-P", self.seqdir])
-
-        if self.verify_file_integrity(filepath, uniprot_file):
-            self.fastas["prot"]["uniprot"] = filepath
-            return True
-        else:
-            logging.error("Downloaded uniref{}.fasta is corrupted.".format(vs))
-            return False
-
-    def swissprot_dl(self):
-        """
-        download swissprot db from ncbi.
-        :return:
-        """
-        fl = "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/swissprot.gz"
-        basename_fl = os.path.basename(fl)
-        filepath = self.seqdir + basename_fl
-
-        if self.update:
-            if os.path.isfile(filepath):
-                os.remove(filepath)
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, basename_fl):
-                logging.info("swissprot.gz found and verified.")
-            else:
-                logging.warning("swissprot.gz exists but is corrupted. Re-downloading...")
-        elif self.test:
-            logging.info("swissprot.gz not found.")
-            return False
-        else:
-            logging.info("swissprot.gz not found. downloading...")
-            subprocess.run(["wget", "--quiet", "-P", self.seqdir, fl])
-
-        if self.verify_file_integrity(filepath, basename_fl):
-            self.fastas["prot"]["swissprot"] = filepath
-            self.db_versions["swissprot"] = {
-                "version": self.get_file_mod_date(filepath),
-                "source_url": fl,
-                "file_mod_date": self.get_file_mod_date(filepath)
-            }
-            return True
-        else:
-            logging.error("Downloaded swissprot.gz is corrupted.")
-            return False
-
-    def RVDB_dl(self, vs="22.0"):
-        """
-        download rvdb.
-        :param vs: rvdb version.
-        :return:
-        """
-        fl = "https://rvdb-prot.pasteur.fr/files/U-RVDBv{}-prot.fasta.xz"
-        fl = fl.format(vs)
-        basename_fl = os.path.basename(fl).replace(".xz", ".gz")
-        filepath = self.seqdir + basename_fl
-
-        if os.path.isfile(filepath):
-            if self.verify_file_integrity(filepath, basename_fl):
-                logging.info("U-RVDBv{}.fasta.xz found and verified.".format(vs))
-            else:
-                logging.warning("U-RVDBv{}.fasta.xz exists but is corrupted. Re-downloading...".format(vs))
-        elif self.test:
-            logging.info("U-RVDBv{}.fasta.xz not found.".format(vs))
-            return False
-        else:
-            logging.info("U-RVDBv{}.fasta.xz not found. downloading...".format(vs))
-            xz_path = self.seqdir + os.path.basename(fl)
-            subprocess.run(["wget", "-P", self.seqdir, fl])
-            if os.path.isfile(xz_path):
-                if self.verify_file_integrity(xz_path, os.path.basename(fl)):
-                    subprocess.run(["unxz", xz_path])
-                    unxz_path = os.path.splitext(xz_path)[0]
-                    subprocess.run([BGZIP_BIN, unxz_path])
-                    filepath = unxz_path + ".gz"
-                else:
-                    logging.error("Downloaded U-RVDBv{}.fasta.xz is corrupted.".format(vs))
-                    return False
-            else:
-                logging.error("Download of U-RVDBv{}.fasta.xz failed.".format(vs))
-                return False
-
-        if self.verify_file_integrity(filepath, basename_fl):
-            self.fastas["prot"]["rvdb"] = filepath
-            self.db_versions["rvdb"] = {
-                "version": vs,
-                "source_url": fl,
-                "file_mod_date": self.get_file_mod_date(filepath)
-            }
-            return True
-        else:
-            logging.error("Downloaded U-RVDBv{}.fasta is corrupted.".format(vs))
-            return False
-
-    def virosaurus_dl(self):
-        """
-        download virossaurus from viralzone.
-        :return:
-        """
-
-        fl = "https://ftp.expasy.org/databases/viralzone/2020%5F4/virosaurus90%5Fvertebrate-20200330.fas.gz"
-        basename_fl = os.path.basename(fl)
-        filepath = self.seqdir + basename_fl
-
-        if os.path.isfile(filepath) and os.path.getsize(filepath) > 100:
-            if self.verify_file_integrity(filepath, basename_fl):
-                logging.info("virosaurus90_vertebrate_20200330.fas found and verified.")
-            else:
-                logging.warning("virosaurus90_vertebrate_20200330.fas exists but is corrupted. Re-downloading...")
-        elif self.test:
-            logging.info("virosaurus90_vertebrate_20200330.fas not found.")
-            return False
-        else:
-            try:
-                logging.info(
-                    "virosaurus90_vertebrate_20200330.fas not found. downloading..."
-                )
-                subprocess.run(
-                    ["wget", "--no-check-certificate", fl, "-P", self.seqdir]
-                )
-            except subprocess.CalledProcessError:
-                logging.info("virosaus download failed.")
-                return False
-
-            if not os.path.isfile(filepath) or os.path.getsize(filepath) <= 100:
-                logging.info("wget failed. trying curl...")
-                subprocess.run(
-                    ["curl", fl, "-o", filepath]
-                )
-
-            if not os.path.isfile(filepath) or os.path.getsize(filepath) <= 100:
-                logging.info("virosaurus download failed.")
-                return False
-
-        if self.verify_file_integrity(filepath, basename_fl):
-            self.fastas["nuc"]["virosaurus"] = [filepath]
-            self.db_versions["virosaurus"] = {
-                "version": self.get_file_mod_date(filepath),
-                "source_url": fl,
-                "file_mod_date": self.get_file_mod_date(filepath)
-            }
-            return True
-        else:
-            logging.error("Downloaded virosaurus90_vertebrate_20200330.fas is corrupted.")
-            return False
 
     def nuc_metadata(self, outfile="acc2taxid.tsv"):
         """
