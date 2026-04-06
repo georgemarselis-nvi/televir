@@ -366,6 +366,40 @@ class setup_dl:
                 else:
                     logging.info(f"{flname} already bgzipped and indexed.")
 
+    def dl_filter_file(self, dl_entry: dict):
+        """
+        download generic filter file
+        """
+        filename = dl_entry.get("filename", "")
+        url = dl_entry.get("url", "")
+        if not filename or not url:
+            logging.error("Invalid download entry.")
+            return False
+
+        filepath = self.seqdir + filename
+        if os.path.isfile(filepath):
+            if self.verify_file_integrity(filepath, filename):
+                self.fastas["filter"][filename] = filepath
+                logging.info(f"{filename} found and verified.")
+                return True
+            logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
+        try:
+            subprocess.run(
+                ["wget", url, "-P", self.seqdir],
+                check=False,
+            )
+        except subprocess.CalledProcessError:
+            logging.info(f"{filename} not found.")
+            return False
+
+        if self.verify_file_integrity(filepath, filename):
+            self.fastas["filter"][filename] = filepath
+            logging.info(f"{filename} found and verified.")
+            return True
+        else:
+            logging.error(f"Downloaded {filename} is corrupted.")
+            return False
+
     def refseq_16s_dl(self, fname="refseq_16s"):
         """
         download 16s from https://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/Bacteria/bacteria.16SrRNA.fna.gz

@@ -280,6 +280,22 @@ class main_setup:
                 _success = self.wdir.download_host(host)
                 logging.info(f"host {host} download success: {_success}")
 
+        if self.layout.install_ribo16s:
+            ribo16s_entry = get_db_entry("ribosomal_rna", "refseq_16s")
+            ribo16s_success = self.wdir.dl_filter_file(ribo16s_entry)
+            logging.info(f"Ribo 16S download success: {ribo16s_success}")
+            ribo16s_desc = ribo16s_entry.get("description", "")
+            self.utilities.add_database(
+                self.utilities.database_item(
+                    name="refseq_16s",
+                    path=self.wdir.fastas["nuc"].get("refseq_16s", [""])[0],
+                    installed=ribo16s_success,
+                    software="refseq",
+                    db_type="nuc",
+                    description=ribo16s_desc,
+                )
+            )
+
         if self.layout.install_request_sequences:
             request_success = self.wdir.install_requests()
             if request_success:
