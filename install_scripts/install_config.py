@@ -75,11 +75,11 @@ class TelevirLayout:
     DATABASE_NAMES = {
         # Reference databases
         # RefSeq viral
-        "install_refseq_viral_prot": ("refseq_db", "viral_protein"),
-        "install_refseq_viral_gen": ("refseq_db", "viral_genome"),
+        "install_refseq_viral_prot": ("refseq", "viral_protein"),
+        "install_refseq_viral_gen": ("refseq", "viral_genome"),
         # RefSeq bacterial
-        "install_refseq_bacterial_prot": ("refseq_db", "bacterial_protein"),
-        "install_refseq_bacterial_gen": ("refseq_db", "bacterial_genome"),
+        "install_refseq_bacterial_prot": ("refseq", "bacterial_protein"),
+        "install_refseq_bacterial_gen": ("refseq", "bacterial_genome"),
         # Other protein databases
         "install_swissprot": ("protein", "swissprot"),
         "install_rvdb": ("protein", "rvdb"),

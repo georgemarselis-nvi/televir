@@ -282,7 +282,7 @@ class main_setup:
 
         if self.layout.install_refseq_16s:
             refseq_16s_entry = get_db_entry("ribosomal_rna", "refseq_16s")
-            refseq_16s_success = self.wdir.dl_filter_file(refseq_16s_entry, fname="refseq_16s", db_key="nuc")
+            refseq_16s_success = self.wdir.dl_filter_file(refseq_16s_entry, fname="refseq_16s", db_key="filter")
             logging.info(f"RefSeq 16S download success: {refseq_16s_success}")
             refseq_16s_desc = refseq_16s_entry.get("description", "")
             refseq_16s_path = self.wdir.fastas["nuc"].get("refseq_16s", [""])[0]
@@ -303,7 +303,7 @@ class main_setup:
 
         if self.layout.install_ribo16s:
             silva_16s_entry = get_db_entry("ribosomal_rna", "silva_16s")
-            silva_16s_success = self.wdir.dl_filter_file(silva_16s_entry, fname="silva_16s", db_key="nuc")
+            silva_16s_success = self.wdir.dl_filter_file(silva_16s_entry, fname="silva_16s", db_key="filter")
             logging.info(f"SILVA 16S download success: {silva_16s_success}")
             silva_16s_desc = silva_16s_entry.get("description", "")
             silva_16s_path = self.wdir.fastas["nuc"].get("silva_16s", [""])[0]
@@ -324,7 +324,7 @@ class main_setup:
 
         if self.layout.install_ncbi_16s:
             ncbi_16s_entry = get_db_entry("ribosomal_rna", "ncbi_16s")
-            ncbi_16s_success = self.wdir.dl_filter_file(ncbi_16s_entry, fname="ncbi_16s", db_key="nuc")
+            ncbi_16s_success = self.wdir.dl_filter_file(ncbi_16s_entry, fname="ncbi_16s", db_key="filter")
             logging.info(f"NCBI 16S download success: {ncbi_16s_success}")
             ncbi_16s_desc = ncbi_16s_entry.get("description", "")
             ncbi_16s_path = self.wdir.fastas["nuc"].get("ncbi_16s", [""])[0]

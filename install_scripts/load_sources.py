@@ -125,7 +125,8 @@ class SourceLoader:
         Returns:
             Dict with url, description, file_pattern or None
         """
-        return self.get('databases', 'refseq_dynamic', organism, db_type)
+        key = f"{organism}_{db_type}"
+        return self.get('databases', 'refseq', key)
     
     def get_db_url(self, category: str, name: str) -> Optional[str]:
         """Get database URL by category and name.

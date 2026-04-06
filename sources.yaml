@@ -198,9 +198,9 @@ databases:
       file: "taxdump.tar.gz"
 
   # ---------------------------------------------------------------------------
-  # RefSeq Databases (flat structure - shown in TELE-Vir Status)
+  # RefSeq Databases (used by get_refseq_entry + downloader)
   # ---------------------------------------------------------------------------
-  refseq_db:
+  refseq:
     viral_protein:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/"
       description: "RefSeq viral protein database"
@@ -220,29 +220,6 @@ databases:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/bacteria/"
       description: "RefSeq bacterial genome database"
       file_pattern: "bacteria.genome.fna.gz"
-
-  # ---------------------------------------------------------------------------
-  # RefSeq Dynamic Downloader (organism-specific - used by downloader)
-  # ---------------------------------------------------------------------------
-  refseq_dynamic:
-    viral:
-      protein:
-        url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/"
-        description: "RefSeq viral protein database"
-        file_pattern: "viral.protein.faa.gz"
-      genome:
-        url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/"
-        description: "RefSeq viral genome database"
-        file_pattern: "viral.genome.fna.gz"
-    bacterial:
-      protein:
-        url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/bacteria/"
-        description: "RefSeq bacterial protein database"
-        file_pattern: "bacteria.protein.faa.gz"
-      genome:
-        url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/bacteria/"
-        description: "RefSeq bacterial genome database"
-        file_pattern: "bacteria.genome.fna.gz"
 
   # ---------------------------------------------------------------------------
   # Voyager Databases
