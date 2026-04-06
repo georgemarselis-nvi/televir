@@ -1042,6 +1042,8 @@ class main_setup:
                     )
                 )
                 db_cat, _db_name = self.layout.DATABASE_NAMES.get("install_bwa_filter", ("bwa", fname))
+                db_entry = get_db_entry(db_cat, _db_name)
+                db_desc = db_entry.get("description") if db_entry else None
                 self.utilities.add_database(
                     self.utilities.database_item(
                         name=fname,
