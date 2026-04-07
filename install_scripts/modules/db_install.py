@@ -1764,6 +1764,7 @@ class setup_dl:
     def get_nuc(self):
         """
         download ncbi nucleotide acc2taxid files.
+        Downloads nucl_gb.accession2taxid.gz and nucl_wgs.accession2taxid.gz
         :return:
         """
         acc2tax_dir = self.nucl_acc2tax_dir
@@ -1771,9 +1772,13 @@ class setup_dl:
         if not os.path.isdir(acc2tax_dir):
             os.makedirs(acc2tax_dir, exist_ok=True)
 
-        for si in range(1, 25):
-            file = f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl.accession2taxid.{si}.gz"
-            filename = os.path.basename(file)
+        files_to_download = [
+            "nucl_gb.accession2taxid.gz",
+            "nucl_wgs.accession2taxid.gz"
+        ]
+
+        for filename in files_to_download:
+            file_url = f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/{filename}"
             destination_file = os.path.join(acc2tax_dir, filename)
             fexist = os.path.exists(destination_file)
             print(f"file {filename} exists: {fexist}")
@@ -1787,7 +1792,7 @@ class setup_dl:
                             "wget",
                             "-P",
                             acc2tax_dir,
-                            file,
+                            file_url,
                         ],
                         check=False,
                     )
@@ -2058,9 +2063,14 @@ class setup_dl:
         
         acc2tax_dir = self.get_nuc()
         
+        files = [
+            "nucl_gb.accession2taxid.gz",
+            "nucl_wgs.accession2taxid.gz"
+        ]
+        
         threads = [
-            Thread(target=self._parse_nucleotide_taxids_thread, args=(dci, db_path, acc2tax_dir, other_dbs))
-            for dci in range(1, 25)
+            Thread(target=self._parse_nucleotide_taxids_thread, args=(filename, db_path, acc2tax_dir, other_dbs))
+            for filename in files
         ]
         for th in threads:
             th.start()
@@ -2080,11 +2090,12 @@ class setup_dl:
         
         conn.close()
 
-    def _parse_nucleotide_taxids_thread(self, dci: int, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
+    def _parse_nucleotide_taxids_thread(self, filename: str, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
         """
-        Thread worker to process NCBI nucl.accession2taxid files.
+        Thread worker to process NCBI nucl accession2taxid files.
+        :param filename: nucl_gb.accession2taxid.gz or nucl_wgs.accession2taxid.gz
         """
-        match_db = self.metadir + f"nuc_matches_{dci}.db"
+        match_db = self.metadir + f"nuc_matches_{filename.replace('.gz','').replace('.','_')}.db"
         
         if os.path.exists(match_db):
             return
@@ -2100,7 +2111,7 @@ class setup_dl:
             cursor = acc_conn.execute("SELECT acc FROM nucleotide_accessions WHERE dbs = ?", (dbs,))
             acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
         
-        doc = acc2tax_dir + f"nucl.accession2taxid.{dci}.gz"
+        doc = os.path.join(acc2tax_dir, filename)
         
         if not os.path.isfile(doc):
             match_conn.close()
@@ -2130,7 +2141,7 @@ class setup_dl:
         conn = sqlite3.connect(db_path)
         
         for dbs in dbs_list:
-            temp_conn = sqlite3.connect(self.metadir + f"nuc_matches_{dci}.db")
+            temp_conn = sqlite3.connect(self.metadir + f"nuc_matches_{filename.replace('.gz','').replace('.','_')}.db")
             cursor = temp_conn.execute("SELECT acc, taxid FROM matches WHERE dbs = ?", (dbs,))
             for acc, taxid in cursor.fetchall():
                 conn.execute(
