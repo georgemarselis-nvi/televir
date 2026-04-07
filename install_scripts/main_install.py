@@ -939,138 +939,140 @@ class main_setup:
                     )
                 )
 
-        for fname, fpath in prepdl.fastas["host"].items():
+        for fname, fd_list in prepdl.fastas["host"].items():
 
-            if self.layout.install_bwa_host:
-                bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
-                self.installed_software.append(self.software_install_string("bwa"))
-                self.utilities.add_software(
-                    self.utilities.software_item(
-                        "bwa",
-                        sofprep.dbs["bwa"]["fasta"],
-                        fname,
-                        bwa_install,
-                        sofprep.envs["ROOT"] + sofprep.envs["bwa"],
-                        tag="host",
-                        binary_name="bwa",
-                    )
-                )
-                self.utilities.add_database(
-                    self.utilities.database_item(
-                        name=fname,
-                        path=sofprep.dbs["bwa"]["fasta"],
-                        installed=bwa_install,
-                        software="bwa",
-                        db_type="host",
-                    )
-                )
-
-            if self.layout.install_bowtie2_depletion:
-                bowtie2_install = sofprep.bowtie2_index(dbname=fname, reference=fpath)
-                if bowtie2_install:
-                    self.installed_software.append(
-                        self.software_install_string("bowtie2")
-                    )
+            for fpath in fd_list:   
+                if self.layout.install_bwa_host:
+                    bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
+                    self.installed_software.append(self.software_install_string("bwa"))
                     self.utilities.add_software(
                         self.utilities.software_item(
-                            "bowtie2",
-                            sofprep.dbs["bowtie2"]["db"],
+                            "bwa",
+                            sofprep.dbs["bwa"]["fasta"],
                             fname,
-                            bowtie2_install,
-                            sofprep.envs["ROOT"] + sofprep.envs["bowtie2"],
+                            bwa_install,
+                            sofprep.envs["ROOT"] + sofprep.envs["bwa"],
                             tag="host",
-                            binary_name="bowtie2",
+                            binary_name="bwa",
                         )
                     )
                     self.utilities.add_database(
                         self.utilities.database_item(
                             name=fname,
-                            path=sofprep.dbs["bowtie2"]["db"],
-                            installed=bowtie2_install,
-                            software="bowtie2",
+                            path=sofprep.dbs["bwa"]["fasta"],
+                            installed=bwa_install,
+                            software="bwa",
                             db_type="host",
                         )
                     )
 
-            minimap2_install = sofprep.minimap2_install(dbname=fname, reference=fpath)
-            self.utilities.add_software(
-                self.utilities.software_item(
-                    "minimap2",
-                    fpath,
-                    fname,
-                    minimap2_install,
-                    sofprep.envs["ROOT"] + sofprep.envs["bwa"],
-                    tag="host",
-                    binary_name="minimap2",
-                )
-            )
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=fname,
-                    path=fpath,
-                    installed=minimap2_install,
-                    software="minimap2",
-                    db_type="host",
-                )
-            )
-        # install prot databases using local files.
-        for fname, fpath in prepdl.fastas["prot"].items():
-            if self.layout.install_diamond:
-                install_success = sofprep.diamond_install(dbname=fname, db=fpath)
+                if self.layout.install_bowtie2_depletion:
+                    bowtie2_install = sofprep.bowtie2_index(dbname=fname, reference=fpath)
+                    if bowtie2_install:
+                        self.installed_software.append(
+                            self.software_install_string("bowtie2")
+                        )
+                        self.utilities.add_software(
+                            self.utilities.software_item(
+                                "bowtie2",
+                                sofprep.dbs["bowtie2"]["db"],
+                                fname,
+                                bowtie2_install,
+                                sofprep.envs["ROOT"] + sofprep.envs["bowtie2"],
+                                tag="host",
+                                binary_name="bowtie2",
+                            )
+                        )
+                        self.utilities.add_database(
+                            self.utilities.database_item(
+                                name=fname,
+                                path=sofprep.dbs["bowtie2"]["db"],
+                                installed=bowtie2_install,
+                                software="bowtie2",
+                                db_type="host",
+                            )
+                        )
 
-                if install_success:
-                    self.installed_software.append(
-                        self.software_install_string("diamond")
-                    )
-
-                sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_diamond", ("diamond", fname))
+                minimap2_install = sofprep.minimap2_install(dbname=fname, reference=fpath)
                 self.utilities.add_software(
                     self.utilities.software_item(
-                        sw_name,
-                        sofprep.dbs["diamond"]["db"],
-                        sw_tag,
-                        install_success,
-                        sofprep.envs["ROOT"] + sofprep.envs["diamond"],
-                        binary_name="diamond",
+                        "minimap2",
+                        fpath,
+                        fname,
+                        minimap2_install,
+                        sofprep.envs["ROOT"] + sofprep.envs["bwa"],
+                        tag="host",
+                        binary_name="minimap2",
                     )
                 )
                 self.utilities.add_database(
                     self.utilities.database_item(
-                        name=sw_tag,
-                        path=sofprep.dbs["diamond"]["db"],
-                        installed=install_success,
-                        software="diamond",
-                        db_type="filter",
+                        name=fname,
+                        path=fpath,
+                        installed=minimap2_install,
+                        software="minimap2",
+                        db_type="host",
                     )
                 )
+        # install prot databases using local files.
+        for fname, fd_list in prepdl.fastas["prot"].items():
+            for fpath in fd_list:
+                if self.layout.install_diamond:
+                    install_success = sofprep.diamond_install(dbname=fname, db=fpath)
 
-            if self.layout.install_blast:
-                if fname == "refseq":
-                    success_install = sofprep.blast_install(
-                        reference=fpath,
-                        dbname=f"refseq_{self.organism}_prot",
-                        nuc=False,
-                        taxid_map=sofprep.metadir + "acc2taxid.prot.map",
-                        args="-parse_seqids",
-                        title=f"refseq {self.organism} prot",
-                    )
-
-                    if success_install:
+                    if install_success:
                         self.installed_software.append(
-                            self.software_install_string("blastp")
+                            self.software_install_string("diamond")
                         )
 
-                    sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
+                    sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_diamond", ("diamond", fname))
                     self.utilities.add_software(
                         self.utilities.software_item(
                             sw_name,
-                            sofprep.dbs["blast"]["db"],
+                            sofprep.dbs["diamond"]["db"],
                             sw_tag,
-                            success_install,
-                            sofprep.envs["ROOT"] + sofprep.envs["blast"],
-                            binary_name="blastn",
+                            install_success,
+                            sofprep.envs["ROOT"] + sofprep.envs["diamond"],
+                            binary_name="diamond",
                         )
                     )
+                    self.utilities.add_database(
+                        self.utilities.database_item(
+                            name=sw_tag,
+                            path=sofprep.dbs["diamond"]["db"],
+                            installed=install_success,
+                            software="diamond",
+                            db_type="filter",
+                        )
+                    )
+
+                if self.layout.install_blast:
+                    if fname == "refseq":
+                        success_install = sofprep.blast_install(
+                            reference=fpath,
+                            dbname=f"refseq_{self.organism}_prot",
+                            nuc=False,
+                            taxid_map=sofprep.metadir + "acc2taxid.prot.map",
+                            args="-parse_seqids",
+                            title=f"refseq {self.organism} prot",
+                        )
+
+                        if success_install:
+                            self.installed_software.append(
+                                self.software_install_string("blastp")
+                            )
+
+                        sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
+                        self.utilities.add_software(
+                            self.utilities.software_item(
+                                sw_name,
+                                sofprep.dbs["blast"]["db"],
+                                sw_tag,
+                                success_install,
+                                sofprep.envs["ROOT"] + sofprep.envs["blast"],
+                                binary_name="blastn",
+                            )
+                        )
 
         # install nuc databases using local files.
         for fname, fd_list in prepdl.fastas["nuc"].items():
