@@ -908,7 +908,10 @@ class main_setup:
         logging.info("install prepped")
 
         # Build indices for "filter" databases (16S rRNA, etc.)
+        print(prepdl.fastas)
         for fname, fd_list in prepdl.fastas["filter"].items():
+            print(f"Building index for filter database: {fname}")
+            print(fd_list)
             for fpath in fd_list:
                 if self._should_build_index("filter", fname, "bwa"):
                     bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
