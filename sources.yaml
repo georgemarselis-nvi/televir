@@ -18,16 +18,25 @@ databases:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/TargetedLoci/Bacteria/bacteria.16SrRNA.fna.gz"
       description: "RefSeq 16S rRNA sequences from targeted loci"
       file: "bacteria.16SrRNA.fna.gz"
+      install: true
+      install_types: ["filter"]
+      db_key: "filter"
 
     silva_16s:
       url: "https://www.arb-silva.de/fileadmin/silva_databases/release_138_1/Exports/SILVA_138.1_LSURef_NR99_tax_silva.fasta.gz"
       description: "SILVA 138.1 LSURef NR99 16S rRNA with taxonomy"
       file: "SILVA_138.1_LSURef_NR99_tax_silva.fasta.gz"
+      install: true
+      install_types: ["filter"]
+      db_key: "filter"
 
     ncbi_16s:
       url: "https://ftp.ncbi.nlm.nih.gov/blast/db/16S_ribosomal_RNA.tar.gz"
       description: "NCBI 16S ribosomal RNA database"
       file: "16S_ribosomal_RNA.tar.gz"
+      install: false
+      install_types: ["filter"]
+      db_key: "filter"
 
   # ---------------------------------------------------------------------------
   # Protein Databases
@@ -37,23 +46,35 @@ databases:
       url: "https://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz"
       description: "UniRef90 protein cluster database"
       file: "uniref90.fasta.gz"
-      version_template: "{version}.fasta.gz" # Use {version} placeholder
+      version_template: "{version}.fasta.gz"
+      install: false
+      install_types: ["prot"]
+      db_key: "prot"
 
     uniref100:
       url: "https://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref100/uniref100.fasta.gz"
       description: "UniRef100 protein cluster database"
       file: "uniref100.fasta.gz"
+      install: false
+      install_types: ["prot"]
+      db_key: "prot"
 
     swissprot:
       url: "https://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/swissprot.gz"
       description: "SwissProt reviewed protein database"
       file: "swissprot.gz"
+      install: false
+      install_types: ["prot"]
+      db_key: "prot"
 
     rvdb:
       url: "https://rvdb-prot.pasteur.fr/files/U-RVDBv{version}-prot.fasta.xz"
       description: "Reverse Virome Database"
       file: "U-RVDBv{version}-prot.fasta.xz"
       version_default: "22.0"
+      install: false
+      install_types: ["prot"]
+      db_key: "prot"
 
   # ---------------------------------------------------------------------------
   # Nucleotide Databases
@@ -63,6 +84,9 @@ databases:
       url: "https://ftp.expasy.org/databases/viralzone/2020%5F4/virosaurus90%5Fvertebrate-20200330.fas.gz"
       description: "Virosaurus curated viral genome database"
       file: "virosaurus90%5Fvertebrate-20200330.fas.gz"
+      install: true
+      install_types: ["nuc"]
+      db_key: "nuc"
 
   # ---------------------------------------------------------------------------
   # Kraken2 Pre-built Databases
@@ -190,12 +214,16 @@ databases:
       files_template: "prot.accession2taxid.FULL.{number}.gz"
       numbers: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       description: "NCBI protein accession to taxonomy ID mapping"
+      install: false
+      install_types: []
 
     taxdump:
       url: "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
       ftp_url: "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
       description: "NCBI taxonomy database dump"
       file: "taxdump.tar.gz"
+      install: false
+      install_types: []
 
   # ---------------------------------------------------------------------------
   # RefSeq Databases (used by get_refseq_entry + downloader)
@@ -205,21 +233,45 @@ databases:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/"
       description: "RefSeq viral protein database"
       file_pattern: "viral.protein.faa.gz"
+      install: true
+      install_types: ["prot"]
+      db_key: "prot"
+      download_method: "refseq"
+      refseq_organism: "viral"
+      refseq_type: "protein"
 
     viral_genome:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/viral/"
       description: "RefSeq viral genome database"
       file_pattern: "viral.genome.fna.gz"
+      install: true
+      install_types: ["nuc"]
+      db_key: "nuc"
+      download_method: "refseq"
+      refseq_organism: "viral"
+      refseq_type: "genome"
 
     bacterial_protein:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/bacteria/"
       description: "RefSeq bacterial protein database"
       file_pattern: "bacteria.protein.faa.gz"
+      install: false
+      install_types: ["prot"]
+      db_key: "prot"
+      download_method: "refseq"
+      refseq_organism: "bacterial"
+      refseq_type: "protein"
 
     bacterial_genome:
       url: "https://ftp.ncbi.nlm.nih.gov/refseq/release/bacteria/"
       description: "RefSeq bacterial genome database"
       file_pattern: "bacteria.genome.fna.gz"
+      install: false
+      install_types: ["nuc"]
+      db_key: "nuc"
+      download_method: "refseq"
+      refseq_organism: "bacterial"
+      refseq_type: "genome"
 
   # ---------------------------------------------------------------------------
   # Voyager Databases

@@ -1,22 +1,8 @@
 class TelevirLayout:
-    # databases. chose at least one.
-    # RefSeq viral (default)
-    install_refseq_viral_prot = True
-    install_refseq_viral_gen = True
-    # RefSeq bacterial (optional)
-    install_refseq_bacterial_prot = False
-    install_refseq_bacterial_gen = False
-    # Other protein databases
-    install_swissprot = False
-    install_rvdb = False
-    install_virosaurus = True
-    install_request_sequences = False
-    install_ribo16s = True
-    install_refseq_16s = True
-    install_ncbi_16s = False
-
-    ## Filter mapping
-    install_bwa_filter = True
+    # =============================================================================
+    # DATABASE INSTALLATION IS NOW CONTROLLED IN sources.yaml
+    # See sources.yaml 'install' and 'install_types' fields for each database entry
+    # =============================================================================
 
     # hosts ### CHECK HOST LIBRARY FILE FOR AVAILABLE HOSTS ###
     HOSTS_TO_INSTALL = [

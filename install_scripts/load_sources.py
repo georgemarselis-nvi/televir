@@ -185,6 +185,156 @@ class SourceLoader:
                 return entry
         return None
     
+    def is_db_enabled(self, category: str, name: str) -> bool:
+        """Check if a database is enabled for installation.
+        
+        Args:
+            category: Database category (e.g., 'kraken2', 'kaiju', 'protein')
+            name: Database name within category
+            
+        Returns:
+            True if install is true/empty/missing, False if install is explicitly false
+        """
+        entry = self.get_db_entry(category, name)
+        if entry is None:
+            return False
+        
+        install_val = entry.get('install')
+        if install_val is None:
+            return True
+        return bool(install_val)
+    
+    def get_install_types(self, category: str, name: str) -> list:
+        """Get list of install types for a database.
+        
+        Args:
+            category: Database category
+            name: Database name
+            
+        Returns:
+            List of install types (e.g., ['filter'], ['prot', 'nuc'])
+        """
+        entry = self.get_db_entry(category, name)
+        if entry is None:
+            return []
+        
+        return entry.get('install_types', [])
+    
+    def get_db_key(self, category: str, name: str) -> str:
+        """Get db_key for a database.
+        
+        Args:
+            category: Database category
+            name: Database name
+            
+        Returns:
+            db_key string (filter, prot, nuc) - inferred from install_types if not explicit
+        """
+        entry = self.get_db_entry(category, name)
+        if entry is None:
+            return ""
+        
+        # Return explicit db_key if set
+        db_key = entry.get('db_key')
+        if db_key:
+            return db_key
+        
+        # Infer from install_types
+        install_types = entry.get('install_types', [])
+        if 'filter' in install_types:
+            return 'filter'
+        if 'prot' in install_types:
+            return 'prot'
+        if 'nuc' in install_types:
+            return 'nuc'
+        if 'host' in install_types:
+            return 'host'
+        
+        return ""
+    
+    def get_download_method(self, category: str, name: str) -> str:
+        """Get download method for a database.
+        
+        Args:
+            category: Database category
+            name: Database name
+            
+        Returns:
+            Download method: 'filter', 'refseq', 'refseq_prot', 'refseq_gen'
+        """
+        entry = self.get_db_entry(category, name)
+        if entry is None:
+            return 'filter'
+        
+        # Check for explicit download_method
+        method = entry.get('download_method')
+        if method:
+            return method
+        
+        # For refseq, determine based on refseq_type
+        if category == 'refseq':
+            refseq_type = entry.get('refseq_type', 'protein')
+            return f'refseq_{refseq_type}'
+        
+        # Default based on db_key or install_types
+        db_key = self.get_db_key(category, name)
+        if db_key in ['prot', 'nuc', 'filter']:
+            return 'filter'
+        
+        return 'filter'
+    
+    def list_enabled_databases(self, category: str) -> list:
+        """List enabled databases for a category.
+        
+        Args:
+            category: Database category (e.g., 'ribosomal_rna', 'protein')
+            
+        Returns:
+            List of (db_name, entry) tuples for enabled databases
+        """
+        db_section = self._sources.get('databases', {}).get(category, {})
+        if not isinstance(db_section, dict):
+            return []
+        
+        result = []
+        for db_name, entry in db_section.items():
+            if isinstance(entry, dict) and self.is_db_enabled(category, db_name):
+                result.append((db_name, entry))
+        
+        return result
+    
+    def list_all_db_configs(self, categories: list) -> dict:
+        """Get download configuration for multiple categories.
+        
+        Args:
+            categories: List of categories to process
+            
+        Returns:
+            Dict mapping category -> list of (db_name, db_key, download_method)
+        """
+        result = {}
+        for category in categories:
+            db_configs = []
+            for db_name, entry in self.list_enabled_databases(category):
+                db_key = self.get_db_key(category, db_name)
+                download_method = self.get_download_method(category, db_name)
+                
+                # For refseq, also get organism/type for get_refseq_entry
+                refseq_organism = entry.get('refseq_organism')
+                refseq_type = entry.get('refseq_type')
+                
+                db_configs.append({
+                    'name': db_name,
+                    'db_key': db_key,
+                    'download_method': download_method,
+                    'entry': entry,
+                    'refseq_organism': refseq_organism,
+                    'refseq_type': refseq_type,
+                })
+            result[category] = db_configs
+        
+        return result
+    
     def get_prebuilt_index_path(self, tool: str, dbname: str) -> Optional[str]:
         """Get prebuilt index path from sources.yaml.
         
@@ -362,6 +512,48 @@ def get_db_version(category: str, name: str) -> Optional[str]:
 def get_db_entry(category: str, name: str) -> Optional[Dict]:
     """Get full database entry from sources.yaml."""
     return get_loader().get_db_entry(category, name)
+
+def is_db_enabled(category: str, name: str) -> bool:
+    """Check if a database is enabled for installation.
+    
+    Returns True if install is true/empty/missing, False if install is explicitly false.
+    """
+    return get_loader().is_db_enabled(category, name)
+
+def get_install_types(category: str, name: str) -> list:
+    """Get list of install types for a database.
+    
+    Returns list of install types (e.g., ['filter'], ['prot', 'nuc']).
+    """
+    return get_loader().get_install_types(category, name)
+
+def get_db_key(category: str, name: str) -> str:
+    """Get db_key for a database.
+    
+    Returns db_key string (filter, prot, nuc) - inferred from install_types if not explicit.
+    """
+    return get_loader().get_db_key(category, name)
+
+def get_download_method(category: str, name: str) -> str:
+    """Get download method for a database.
+    
+    Returns: 'filter', 'refseq', 'refseq_prot', 'refseq_gen'.
+    """
+    return get_loader().get_download_method(category, name)
+
+def list_enabled_databases(category: str) -> list:
+    """List enabled databases for a category.
+    
+    Returns list of (db_name, entry) tuples for enabled databases.
+    """
+    return get_loader().list_enabled_databases(category)
+
+def list_all_db_configs(categories: list) -> dict:
+    """Get download configuration for multiple categories.
+    
+    Returns dict mapping category -> list of config dicts.
+    """
+    return get_loader().list_all_db_configs(categories)
 
 def get_refseq_entry(organism: str, db_type: str) -> Optional[Dict]:
     """Get RefSeq entry for specific organism and type (protein/genome).

@@ -11,7 +11,17 @@ from install_scripts.utils.parse_utils import (
     process_nuc_fasta_dict,
 )
 from install_scripts.install_config import TelevirLayout
-from install_scripts.load_sources import get_db_entry, get_refseq_entry, get_prebuilt_index_path
+from install_scripts.load_sources import (
+    get_db_entry,
+    get_refseq_entry,
+    get_prebuilt_index_path,
+    is_db_enabled,
+    get_install_types,
+    get_db_key,
+    get_download_method,
+    list_enabled_databases,
+    list_all_db_configs,
+)
 
 
 class LayoutWithReport(TelevirLayout):
@@ -272,6 +282,8 @@ class main_setup:
     def prep_dl(self):
         """
         download prot sequences and get taxids.
+        Databases are now configured via sources.yaml 'install' and 'install_types' fields.
+        Dynamically iterates over all enabled databases in configured categories.
         """
 
         ## DOWNLOAD HOSTS
@@ -280,112 +292,46 @@ class main_setup:
                 _success = self.wdir.download_host(host)
                 logging.info(f"host {host} download success: {_success}")
 
-        if self.layout.install_refseq_16s:
-            refseq_16s_entry = get_db_entry("ribosomal_rna", "refseq_16s")
-            refseq_16s_success = self.wdir.dl_filter_file(refseq_16s_entry, fname="refseq_16s", db_key="filter")
-            logging.info(f"RefSeq 16S download success: {refseq_16s_success}")
-            refseq_16s_desc = refseq_16s_entry.get("description", "")
-            refseq_16s_path = self.wdir.fastas["nuc"].get("refseq_16s", [""])[0]
-            db_ver = self.wdir.db_versions.get("refseq_16s", {})
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name="refseq_16s",
-                    path=refseq_16s_path,
-                    installed=refseq_16s_success,
-                    software="ribosomal_rna",
-                    db_type="nuc",
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=refseq_16s_desc,
-                )
-            )
+        # Process databases from sources.yaml
+        download_categories = ["ribosomal_rna", "protein", "nucleotide", "refseq"]
+        db_configs = list_all_db_configs(download_categories)
 
-        if self.layout.install_ribo16s:
-            silva_16s_entry = get_db_entry("ribosomal_rna", "silva_16s")
-            silva_16s_success = self.wdir.dl_filter_file(silva_16s_entry, fname="silva_16s", db_key="filter")
-            logging.info(f"SILVA 16S download success: {silva_16s_success}")
-            silva_16s_desc = silva_16s_entry.get("description", "")
-            silva_16s_path = self.wdir.fastas["nuc"].get("silva_16s", [""])[0]
-            db_ver = self.wdir.db_versions.get("silva_16s", {})
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name="silva_16s",
-                    path=silva_16s_path,
-                    installed=silva_16s_success,
-                    software="ribosomal_rna",
-                    db_type="nuc",
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=silva_16s_desc,
-                )
-            )
+        for category, db_list in db_configs.items():
+            if category == "refseq":
+                self._download_refseq_databases_dynamic(db_list)
+            else:
+                self._download_category_databases(category, db_list)
 
-        if self.layout.install_ncbi_16s:
-            ncbi_16s_entry = get_db_entry("ribosomal_rna", "ncbi_16s")
-            ncbi_16s_success = self.wdir.dl_filter_file(ncbi_16s_entry, fname="ncbi_16s", db_key="filter")
-            logging.info(f"NCBI 16S download success: {ncbi_16s_success}")
-            ncbi_16s_desc = ncbi_16s_entry.get("description", "")
-            ncbi_16s_path = self.wdir.fastas["nuc"].get("ncbi_16s", [""])[0]
-            db_ver = self.wdir.db_versions.get("ncbi_16s", {})
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name="ncbi_16s",
-                    path=ncbi_16s_path,
-                    installed=ncbi_16s_success,
-                    software="ribosomal_rna",
-                    db_type="nuc",
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=ncbi_16s_desc,
-                )
-            )
-
-        if self.layout.install_request_sequences:
-            request_success = self.wdir.install_requests()
-            if request_success:
-                self.installed_databases.append(
-                    self.database_install_string("requests")
-                )
-            request_path = self.wdir.fastas.get("nuc", {}).get("requests", [""])[0]
-            req_category, req_name = self.layout.DATABASE_NAMES.get("install_request_sequences", ("taxonomy", "requests"))
-            req_entry = get_db_entry(req_category, req_name)
-            req_desc = req_entry.get("description") if req_entry else None
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=req_name,
-                    path=request_path,
-                    installed=request_success,
-                    software=req_category,
-                    db_type=req_category,
-                    description=req_desc,
-                )
-            )
-
-        if self.layout.install_refseq_viral_prot:
-            refseq_entry = get_refseq_entry("viral", "protein")
-            url = refseq_entry.get("url", "") if refseq_entry else ""
-            filename = refseq_entry.get("file_pattern", "") if refseq_entry else ""
-            db_key = "viral_protein"
-            success_refprot = self.wdir.refseq_prot_dl(url, filename, db_key)
-            if success_refprot:
-                self.installed_databases.append(
-                    self.database_install_string("refseq_viral_prot")
-                )
-
-            db_ver = self.wdir.db_versions.get(db_key, {})
-            refseq_prot_path = self.wdir.fastas.get("prot", {}).get(db_key, "")
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_refseq_viral_prot", ("refseq", "viral_protein"))
-            db_desc = refseq_entry.get("description") if refseq_entry else None
+    def _download_category_databases(self, category: str, db_configs: list):
+        """
+        Download databases for a category using config from sources.yaml.
+        
+        Args:
+            category: Database category (e.g., 'ribosomal_rna', 'protein')
+            db_configs: List of config dicts from list_all_db_configs
+        """
+        for config in db_configs:
+            db_name = config['name']
+            db_key = config['db_key']
+            entry = config['entry']
+            
+            # Download the file using filter download method
+            success = self.wdir.dl_filter_file(entry, fname=db_name, db_key=db_key)
+            logging.info(f"{db_name} download success: {success}")
+            
+            # Get file path
+            db_path = self.wdir.fastas.get(db_key, {}).get(db_name, [""])[0]
+            db_ver = self.wdir.db_versions.get(db_name, {})
+            db_desc = entry.get("description", "")
+            
+            # Register database
             self.utilities.add_database(
                 self.utilities.database_item(
                     name=db_name,
-                    path=refseq_prot_path,
-                    installed=success_refprot,
-                    software=db_category,
-                    db_type=db_category,
+                    path=db_path,
+                    installed=success,
+                    software=category,
+                    db_type=db_key,
                     version=db_ver.get("version"),
                     source_url=db_ver.get("source_url"),
                     file_mod_date=db_ver.get("file_mod_date"),
@@ -393,28 +339,49 @@ class main_setup:
                 )
             )
 
-        if self.layout.install_refseq_viral_gen:
-            refseq_entry = get_refseq_entry("viral", "genome")
-            url = refseq_entry.get("url", "") if refseq_entry else ""
-            filename = refseq_entry.get("file_pattern", "") if refseq_entry else ""
-            db_key = "viral_genome"
-            success_refnuc = self.wdir.refseq_gen_dl(url, filename, db_key)
-            if success_refnuc:
+    def _download_refseq_databases_dynamic(self, db_configs: list):
+        """Download RefSeq databases using config from sources.yaml.
+        
+        Args:
+            db_configs: List of config dicts for refseq databases
+        """
+        for config in db_configs:
+            db_name = config['name']
+            db_key = config['db_key']
+            entry = config['entry']
+            organism = config.get('refseq_organism')
+            refseq_type = config.get('refseq_type', 'protein')
+            
+            # Get refseq entry
+            refseq_entry = get_refseq_entry(organism, refseq_type)
+            if not refseq_entry:
+                logging.warning(f"No refseq entry for {organism}/{refseq_type}")
+                continue
+            
+            url = refseq_entry.get("url", "")
+            filename = refseq_entry.get("file_pattern", "")
+            
+            if refseq_type == "protein":
+                success = self.wdir.refseq_prot_dl(url, filename, db_name)
+            else:
+                success = self.wdir.refseq_gen_dl(url, filename, db_name)
+            
+            if success:
                 self.installed_databases.append(
-                    self.database_install_string("refseq_viral_gen")
+                    self.database_install_string(db_name)
                 )
-
-            db_ver = self.wdir.db_versions.get(db_key, {})
-            refseq_gen_path = self.wdir.fastas.get("nuc", {}).get(db_key, [""])[0]
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_refseq_viral_gen", ("refseq", "viral_genome"))
-            db_desc = refseq_entry.get("description") if refseq_entry else None
+            
+            db_ver = self.wdir.db_versions.get(db_name, {})
+            db_path = self.wdir.fastas.get(db_key, {}).get(db_name, [""])[0]
+            db_desc = refseq_entry.get("description")
+            
             self.utilities.add_database(
                 self.utilities.database_item(
                     name=db_name,
-                    path=refseq_gen_path,
-                    installed=success_refnuc,
-                    software=db_category,
-                    db_type=db_category,
+                    path=db_path,
+                    installed=success,
+                    software="refseq",
+                    db_type=db_key,
                     version=db_ver.get("version"),
                     source_url=db_ver.get("source_url"),
                     file_mod_date=db_ver.get("file_mod_date"),
@@ -422,115 +389,29 @@ class main_setup:
                 )
             )
 
-        if self.layout.install_refseq_bacterial_prot:
-            refseq_entry = get_refseq_entry("bacterial", "protein")
-            url = refseq_entry.get("url", "") if refseq_entry else ""
-            filename = refseq_entry.get("file_pattern", "") if refseq_entry else ""
-            db_key = "bacterial_protein"
-            success_refprot = self.wdir.refseq_prot_dl(url, filename, db_key)
-            if success_refprot:
-                self.installed_databases.append(
-                    self.database_install_string("refseq_bacterial_prot")
-                )
-
-            db_ver = self.wdir.db_versions.get(db_key, {})
-            refseq_prot_path = self.wdir.fastas.get("prot", {}).get(db_key, "")
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_refseq_bacterial_prot", ("refseq", "bacterial_protein"))
-            db_desc = refseq_entry.get("description") if refseq_entry else None
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=db_name,
-                    path=refseq_prot_path,
-                    installed=success_refprot,
-                    software=db_category,
-                    db_type=db_category,
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=db_desc,
-                )
-            )
-
-        if self.layout.install_refseq_bacterial_gen:
-            refseq_entry = get_refseq_entry("bacterial", "genome")
-            url = refseq_entry.get("url", "") if refseq_entry else ""
-            filename = refseq_entry.get("file_pattern", "") if refseq_entry else ""
-            db_key = "bacterial_genome"
-            success_refnuc = self.wdir.refseq_gen_dl(url, filename, db_key)
-            if success_refnuc:
-                self.installed_databases.append(
-                    self.database_install_string("refseq_bacterial_gen")
-                )
-
-            db_ver = self.wdir.db_versions.get(db_key, {})
-            refseq_gen_path = self.wdir.fastas.get("nuc", {}).get(db_key, [""])[0]
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_refseq_bacterial_gen", ("refseq", "bacterial_genome"))
-            db_desc = refseq_entry.get("description") if refseq_entry else None
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=db_name,
-                    path=refseq_gen_path,
-                    installed=success_refnuc,
-                    software=db_category,
-                    db_type=db_category,
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=db_desc,
-                )
-            )
-
-        if self.layout.install_virosaurus:
-            virosaurus_entry = get_db_entry("nucleotide", "virosaurus")
-            success_virosaurus = self.wdir.dl_filter_file(virosaurus_entry, fname="virosaurus", db_key="nuc")
-            if success_virosaurus:
-                self.installed_databases.append(
-                    self.database_install_string("virosaurus")
-                )
-
-            virosaurus_path = self.wdir.fastas.get("nuc", {}).get("virosaurus", [""])[0]
-            db_ver = self.wdir.db_versions.get("virosaurus", {})
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_virosaurus", ("nucleotide", "virosaurus"))
-            db_desc = virosaurus_entry.get("description") if virosaurus_entry else None
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=db_name,
-                    path=virosaurus_path,
-                    installed=success_virosaurus,
-                    software=db_category,
-                    db_type=db_category,
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=db_desc,
-                )
-            )
-
-        if self.layout.install_rvdb:
-            rvdb_entry = get_db_entry("protein", "rvdb")
-            success_rvdb = self.wdir.dl_filter_file(rvdb_entry, fname="rvdb", db_key="prot")
-            if success_rvdb:
-                self.installed_databases.append(
-                    self.database_install_string("rvdb")
-                )
-
-            rvdb_path = self.wdir.fastas.get("prot", {}).get("rvdb", "")
-            db_ver = self.wdir.db_versions.get("rvdb", {})
-            db_category, db_name = self.layout.DATABASE_NAMES.get("install_rvdb", ("protein", "rvdb"))
-            db_desc = rvdb_entry.get("description") if rvdb_entry else None
-            self.utilities.add_database(
-                self.utilities.database_item(
-                    name=db_name,
-                    path=rvdb_path,
-                    installed=success_rvdb,
-                    software=db_category,
-                    db_type=db_category,
-                    version=db_ver.get("version"),
-                    source_url=db_ver.get("source_url"),
-                    file_mod_date=db_ver.get("file_mod_date"),
-                    description=db_desc,
-                )
-            )
+    def _should_build_index(self, db_key: str, db_name: str, index_type: str) -> bool:
+        """Check if an index should be built for a database.
+        
+        Args:
+            db_key: The database key (filter, prot, nuc, host)
+            db_name: The database name
+            index_type: The index type to build (bwa, diamond, etc.)
+            
+        Returns:
+            True if the index should be built based on sources.yaml config
+        """
+        category_map = {
+            "filter": "ribosomal_rna",
+            "prot": "protein",
+            "nuc": "nucleotide",
+            "host": "host_genomes",
+        }
+        category = category_map.get(db_key)
+        if not category:
+            return False
+        
+        install_types = get_install_types(category, db_name)
+        return index_type in install_types or index_type in ["bwa", "diamond", "minimap2", "fastviromeexplorer"] and db_key in install_types
 
     def dl_metadata_prot(self):
         """
@@ -1021,11 +902,14 @@ class main_setup:
         prepdl: setup_dl,
         sofprep: setup_install,
     ):
+        """
+        Build indices from downloaded databases based on sources.yaml install_types.
+        """
         logging.info("install prepped")
 
+        # Build indices for "filter" databases (16S rRNA, etc.)
         for fname, fpath in prepdl.fastas["filter"].items():
-
-            if self.layout.install_bwa_filter:
+            if self._should_build_index("filter", fname, "bwa"):
                 bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
                 self.installed_software.append(
                     self.software_install_string("bwa-filter")

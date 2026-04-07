@@ -5,6 +5,7 @@ import gzip
 import logging
 import os
 import shutil
+import sqlite3
 import subprocess
 from ftplib import FTP
 from pathlib import Path
@@ -209,6 +210,17 @@ def verify_fasta_integrity(filepath: str) -> bool:
 
 
 class setup_dl:
+    # Shared configuration
+    BATCH_SIZE = 100000
+    
+    # Database filenames
+    PROTEIN_DB = "protein_accessions.db"
+    NUCLEOTIDE_DB = "nucleotide_accessions.db"
+    
+    # NCBI download directory names
+    PROT_ACC2TAX_DIR = "prot.accession2taxid"
+    NUCL_ACC2TAX_DIR = "nucl.accession2taxid"
+    
     def __init__(
         self,
         INSTALL_PARAMS,
@@ -244,8 +256,25 @@ class setup_dl:
         self.db_versions = {}
         self.test = test
         self.update = update
+        self.batch_size = self.BATCH_SIZE
 
         self.organism = organism
+
+    @property
+    def protein_db_path(self):
+        return os.path.join(self.metadir, self.PROTEIN_DB)
+    
+    @property
+    def nucleotide_db_path(self):
+        return os.path.join(self.metadir, self.NUCLEOTIDE_DB)
+    
+    @property
+    def prot_acc2tax_dir(self):
+        return os.path.join(self.metadir, self.PROT_ACC2TAX_DIR)
+    
+    @property
+    def nucl_acc2tax_dir(self):
+        return os.path.join(self.metadir, self.NUCL_ACC2TAX_DIR)
 
     def get_file_mod_date(self, filepath: str):
         """Get file modification date as YYYY-MM-DD"""
@@ -850,11 +879,25 @@ class setup_dl:
         os.system("rm {}".format(" ".join(fls)))
         subprocess.run([BGZIP_BIN, self.seqdir + outf])
 
-    def nuc_metadata(self, outfile="acc2taxid.tsv"):
+    def nuc_metadata(self, use_sqlite=True, outfile="acc2taxid.tsv"):
         """
         merge accession and taxonomy info from nuc fasta files.
+        Uses SQLite for memory-efficient processing and taxid population.
+        
+        :param use_sqlite: if True, use SQLite-backed method (recommended)
+        :param outfile: output filename (for backward compatibility)
         """
+        if use_sqlite:
+            self.init_nucleotide_accessions_db()
+            self.populate_nucleotide_taxids_sqlite()
+            self._export_nuc_acc2taxid()
+        else:
+            self._nuc_metadata_original(outfile)
 
+    def _nuc_metadata_original(self, outfile="acc2taxid.tsv"):
+        """
+        Original nuc_metadata implementation for fallback.
+        """
         if self.update:
             if os.path.isfile(self.metadir + outfile):
                 os.remove(self.metadir + outfile)
@@ -943,14 +986,373 @@ class setup_dl:
 
         tax2acc.to_csv(self.metadir + outfile, sep="\t", index=False)
 
-    def prot_metadata(self):
+    def prot_metadata(self, use_sqlite=True):
         """
         get or produce accession to taxid files for each fasta in fasta.prot.
+        Uses unified SQLite database for memory-efficient processing.
+        :param use_sqlite: if True, use unified SQLite method (recommended)
         :return: self
         """
+        if use_sqlite:
+            self.init_protein_accessions_db()
+            self.populate_protein_taxids_sqlite()
+            self.generate_main_protacc_to_taxid_sqlite()
+        else:
+            self.prot2taxid_rescue()
+            self.parse_refseq_prot()
+            self.generate_main_protacc_to_taxid()
 
-        self.prot2taxid_rescue()
-        self.parse_refseq_prot()
+    def init_protein_accessions_db(self):
+        """
+        Initialize unified SQLite database with all protein accessions.
+        Stores: dbs, acc, description, acc_in_file (taxid populated later).
+        """
+        db_path = self.protein_db_path
+        
+        conn = sqlite3.connect(db_path)
+        
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS protein_accessions (
+                dbs TEXT,
+                acc TEXT,
+                description TEXT,
+                acc_in_file TEXT,
+                taxid INTEGER,
+                PRIMARY KEY (dbs, acc)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_protein_acc ON protein_accessions(acc)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_protein_dbs ON protein_accessions(dbs)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_protein_desc ON protein_accessions(description)")
+        
+        existing_dbs = set()
+        cursor = conn.execute("SELECT DISTINCT dbs FROM protein_accessions")
+        for row in cursor:
+            existing_dbs.add(row[0])
+        
+        for dbs, fl in self.fastas["prot"].items():
+            if dbs in existing_dbs:
+                logging.info(f"Database {dbs} already exists in protein_accessions.db, skipping")
+                continue
+            
+            if not os.path.isfile(fl):
+                logging.warning(f"FASTA file not found for {dbs}: {fl}")
+                continue
+            
+            if self.test:
+                logging.info(f"Test mode: would process {dbs} from {os.path.basename(fl)}")
+                continue
+            
+            logging.info(f"Processing {dbs} from {os.path.basename(fl)}")
+            
+            batch = []
+            
+            with gzip.open(fl, "rt") as fn:
+                for line in fn:
+                    if not line.startswith(">"):
+                        continue
+                    
+                    line = line[1:].strip()
+                    parts = line.split()
+                    
+                    if not parts:
+                        continue
+                    
+                    acc = parts[0]
+                    description = ""
+                    
+                    if dbs == "refseq_prot":
+                        if "[" in line and "]" in line:
+                            desc_start = line.find("[") + 1
+                            desc_end = line.find("]")
+                            description = line[desc_start:desc_end]
+                    elif dbs == "rvdb":
+                        if "|" in acc:
+                            acc_parts = acc.split("|")
+                            if len(acc_parts) >= 3:
+                                acc = acc_parts[2]
+                    
+                    batch.append((dbs, acc, description, acc))
+                    
+                    if len(batch) >= self.batch_size:
+                        conn.executemany(
+                            "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
+                            batch
+                        )
+                        conn.commit()
+                        batch = []
+            
+            if batch:
+                conn.executemany(
+                    "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
+                    batch
+                )
+                conn.commit()
+            
+            logging.info(f"Inserted accessions for {dbs}")
+        
+        conn.close()
+        logging.info(f"Protein accession database initialized: {db_path}")
+
+    def populate_protein_taxids_sqlite(self):
+        """
+        Populate taxid column in protein_accessions database.
+        - refseq_prot: via taxid2desc.tsv (description -> taxid)
+        - other dbs: via NCBI accession2taxid files
+        """
+        db_path = self.protein_db_path
+        conn = sqlite3.connect(db_path)
+        
+        self._populate_refseq_prot_taxids(conn)
+        self._populate_other_protein_taxids(conn)
+        
+        conn.close()
+        logging.info("Protein taxids populated")
+
+    def _populate_refseq_prot_taxids(self, conn):
+        """
+        Populate taxid for refseq_prot using taxid2desc.tsv.
+        """
+        taxid2desc_path = self.metadir + "taxid2desc.tsv"
+        
+        if not os.path.isfile(taxid2desc_path):
+            logging.warning(f"taxid2desc.tsv not found at {taxid2desc_path}, generating from taxdump")
+            self._generate_taxid2desc_from_taxdump(conn)
+            taxid2desc_path = self.metadir + "taxid2desc.tsv"
+            if not os.path.isfile(taxid2desc_path):
+                logging.error("Failed to generate taxid2desc.tsv")
+                return
+        
+        conn.execute("CREATE TABLE IF NOT EXISTS taxid_desc (taxid INTEGER PRIMARY KEY, description TEXT)")
+        
+        conn.execute("DELETE FROM taxid_desc")
+        
+        batch = []
+        with open(taxid2desc_path, "r") as f:
+            header = f.readline()
+            for line in f:
+                parts = line.strip().split("\t")
+                if len(parts) >= 2:
+                    try:
+                        taxid = int(parts[0])
+                        description = parts[1]
+                        batch.append((taxid, description))
+                        
+                        if len(batch) >= self.batch_size:
+                            conn.executemany("INSERT OR REPLACE INTO taxid_desc (taxid, description) VALUES (?, ?)", batch)
+                            conn.commit()
+                            batch = []
+                    except ValueError:
+                        continue
+        
+        if batch:
+            conn.executemany("INSERT OR REPLACE INTO taxid_desc (taxid, description) VALUES (?, ?)", batch)
+            conn.commit()
+        
+        conn.execute("""
+            UPDATE protein_accessions 
+            SET taxid = (
+                SELECT t.taxid 
+                FROM taxid_desc t 
+                WHERE t.description = protein_accessions.description
+            )
+            WHERE dbs = 'refseq_prot' AND description IS NOT NULL AND description != ''
+        """)
+        conn.commit()
+        
+        matched = conn.execute("""
+            SELECT COUNT(*) FROM protein_accessions 
+            WHERE dbs = 'refseq_prot' AND taxid IS NOT NULL
+        """).fetchone()[0]
+        
+        total = conn.execute("""
+            SELECT COUNT(*) FROM protein_accessions 
+            WHERE dbs = 'refseq_prot'
+        """).fetchone()[0]
+        
+        logging.info(f"refseq_prot: {matched}/{total} accessions matched to taxid")
+        
+        conn.execute("DROP TABLE IF EXISTS taxid_desc")
+
+    def _generate_taxid2desc_from_taxdump(self, conn):
+        """
+        Generate taxid2desc.tsv from taxdump names.dmp if available.
+        """
+        taxdump_dir = None
+        
+        for root, dirs, files in os.walk(self.metadir):
+            if "names.dmp" in files:
+                taxdump_dir = root
+                break
+        
+        if not taxdump_dir:
+            logging.warning("taxdump not found in metadata directory")
+            return
+        
+        names_dmp = os.path.join(taxdump_dir, "names.dmp")
+        if not os.path.isfile(names_dmp):
+            logging.warning(f"names.dmp not found at {names_dmp}")
+            return
+        
+        outfile = self.metadir + "taxid2desc.tsv"
+        
+        data = []
+        with open(names_dmp, "r") as f:
+            for line in f:
+                parts = line.strip().split("|")
+                if len(parts) >= 4:
+                    try:
+                        taxid = int(parts[0].strip())
+                        name = parts[1].strip()
+                        name_class = parts[3].strip()
+                        
+                        if name_class == "scientific name":
+                            data.append({"taxid": taxid, "description": name})
+                    except (ValueError, IndexError):
+                        continue
+        
+        if data:
+            df = pd.DataFrame(data)
+            df = df.drop_duplicates(subset="taxid")
+            df = df.sort_values("taxid")
+            df.to_csv(outfile, sep="\t", index=False)
+            logging.info(f"Generated taxid2desc.tsv at {outfile}")
+        else:
+            logging.warning("Failed to generate taxid2desc.tsv")
+
+    def _populate_other_protein_taxids(self, conn):
+        """
+        Populate taxid for other protein databases (swissprot, uniref90, rvdb, etc.)
+        using NCBI prot.accession2taxid files.
+        """
+        other_dbs = []
+        cursor = conn.execute(
+            "SELECT DISTINCT dbs FROM protein_accessions WHERE dbs != 'refseq_prot'"
+        )
+        for row in cursor:
+            dbs = row[0]
+            has_taxid = conn.execute(
+                "SELECT COUNT(*) FROM protein_accessions WHERE dbs = ? AND taxid IS NOT NULL",
+                (dbs,)
+            ).fetchone()[0]
+            if has_taxid == 0:
+                other_dbs.append(dbs)
+        
+        if not other_dbs:
+            logging.info("All non-refseq protein databases already have taxids")
+            return
+        
+        acc2tax_dir = self.get_prot()
+        
+        threads = [
+            Thread(target=self._parse_protein_taxids_thread, args=(dci, db_path, acc2tax_dir, other_dbs))
+            for dci in range(1, 11)
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        
+        for dbs in other_dbs:
+            matched = conn.execute(
+                "SELECT COUNT(*) FROM protein_accessions WHERE dbs = ? AND taxid IS NOT NULL",
+                (dbs,)
+            ).fetchone()[0]
+            total = conn.execute(
+                "SELECT COUNT(*) FROM protein_accessions WHERE dbs = ?",
+                (dbs,)
+            ).fetchone()[0]
+            logging.info(f"{dbs}: {matched}/{total} accessions matched to taxid")
+
+    def _parse_protein_taxids_thread(self, dci: int, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
+        """
+        Thread worker to process NCBI prot.accession2taxid files.
+        """
+        match_db = self.metadir + f"matches_{dci}.db"
+        
+        if os.path.exists(match_db):
+            return
+        
+        match_conn = sqlite3.connect(match_db)
+        match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
+        
+        acc_conn = sqlite3.connect(db_path, readonly=True)
+        
+        dbs_set = set(dbs_list)
+        acc_sets = {}
+        for dbs in dbs_set:
+            cursor = acc_conn.execute("SELECT acc FROM protein_accessions WHERE dbs = ?", (dbs,))
+            acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
+        
+        doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
+        
+        if not os.path.isfile(doc):
+            match_conn.close()
+            return
+        
+        try:
+            for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
+                                     chunksize=chunksize, names=["acc", "taxid"]):
+                for dbs in dbs_set:
+                    matches = chunk[chunk["acc"].isin(acc_sets[dbs])]
+                    if not matches.empty:
+                        match_conn.executemany(
+                            "INSERT INTO matches VALUES (?, ?, ?)",
+                            [(dbs, row["acc"], row["taxid"]) for _, row in matches.iterrows()]
+                        )
+        except Exception as e:
+            logging.error(f"Error processing {doc}: {e}")
+        finally:
+            match_conn.commit()
+            match_conn.close()
+            acc_conn.close()
+        
+        if not os.path.exists(match_db):
+            return
+        
+        conn = sqlite3.connect(db_path)
+        
+        for dbs in dbs_list:
+            temp_conn = sqlite3.connect(self.metadir + f"matches_{dci}.db")
+            cursor = temp_conn.execute("SELECT acc, taxid FROM matches WHERE dbs = ?", (dbs,))
+            for acc, taxid in cursor.fetchall():
+                conn.execute(
+                    "UPDATE protein_accessions SET taxid = ? WHERE dbs = ? AND acc = ?",
+                    (taxid, dbs, acc)
+                )
+            temp_conn.close()
+        
+        conn.commit()
+        conn.close()
+        
+        os.remove(match_db)
+
+    def generate_main_protacc_to_taxid_sqlite(self):
+        """
+        Generate protein_acc2taxid.tsv from unified SQLite database.
+        """
+        db_path = self.protein_db_path
+        final_db_path = os.path.join(self.metadir, "protein_acc2taxid.tsv")
+        
+        if os.path.isfile(final_db_path):
+            logging.info(f"{final_db_path} already exists")
+            return
+        
+        if not os.path.isfile(db_path):
+            logging.error(f"Protein accession database not found at {db_path}")
+            return
+        
+        conn = sqlite3.connect(db_path)
+        
+        df = pd.read_sql("SELECT acc, taxid FROM protein_accessions WHERE taxid IS NOT NULL", conn)
+        conn.close()
+        
+        df.to_csv(final_db_path, sep="\t", index=False)
+        
+        logging.info(f"Generated {final_db_path}")
+        
+        for dbs in self.fastas["prot"].keys():
+            self.meta[dbs] = final_db_path
 
     def parse_refseq_prot(self):
         if "refseq_prot" not in self.fastas["prot"]:
@@ -1142,12 +1544,188 @@ class setup_dl:
 
         return dict_ids
 
+    def temp_nucmeta_sqlite(self):
+        """
+        Store accession IDs in SQLite instead of memory to prevent OOM.
+        Returns path to SQLite database for later reuse.
+        """
+        db_path = self.protein_db_path
+        
+        if os.path.exists(db_path):
+            logging.info(f"Reusing existing accession database: {db_path}")
+            return db_path
+        
+        conn = sqlite3.connect(db_path)
+        conn.execute("CREATE TABLE accessions (dbs TEXT, acc TEXT)")
+        conn.execute("CREATE INDEX idx_acc ON accessions(acc)")
+        conn.execute("CREATE INDEX idx_dbs ON accessions(dbs)")
+        
+        for dbs, fl in self.fastas["prot"].items():
+            if dbs in ["refseq_prot"]:
+                continue
+            
+            outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
+            if os.path.isfile(outfile):
+                self.meta[dbs] = outfile
+                logging.info(f"acc2taxid map file {outfile} exists, continuing.")
+                continue
+            
+            if self.test:
+                logging.info(f"acc2taxid map file {outfile} not found.")
+                continue
+            
+            logging.info(f"Creating accession database for {dbs} from {os.path.basename(fl)}")
+            
+            batch = []
+            
+            with gzip.open(fl, "rt") as fn:
+                for line in fn:
+                    if line.startswith(">"):
+                        acc = line.split()[0][1:]
+                        if dbs == "rvdb":
+                            acc = acc.split("|")[2]
+                        batch.append((dbs, acc))
+                        
+                        if len(batch) >= self.batch_size:
+                            conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
+                            conn.commit()
+                            batch = []
+            
+            if batch:
+                conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
+                conn.commit()
+            
+            logging.info(f"Inserted accessions for {dbs}")
+        
+        conn.close()
+        logging.info(f"Accession database created: {db_path}")
+        return db_path
+
+    def prot2taxid_rescue_sqlite(self):
+        """
+        Database-backed protein accession to taxid mapping.
+        Uses SQLite to avoid OOM issues with large datasets.
+        """
+        acc_db = self.temp_nucmeta_sqlite()
+        
+        if not acc_db:
+            logging.error("Failed to create accession database")
+            return
+        
+        acc2tax_dir = self.get_prot()
+        
+        dbs_to_process = []
+        for dbs in self.fastas["prot"].keys():
+            if dbs in ["refseq_prot"]:
+                continue
+            outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
+            if not os.path.isfile(outfile):
+                dbs_to_process.append(dbs)
+        
+        if not dbs_to_process:
+            logging.info("All protein accession2taxid mappings already exist")
+            return
+        
+        threads = [
+            Thread(target=self.prot2taxid_parse_sqlite, args=(dci, acc_db, acc2tax_dir, dbs_to_process))
+            for dci in range(1, 11)
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        
+        for dbs in dbs_to_process:
+            self._merge_matches_sqlite(dbs)
+            self.meta[dbs] = self.metadir + f"{dbs}_acc2taxid.tsv"
+        
+        logging.info(f"Accession to taxid mapping done. Database saved at {acc_db}")
+
+    def prot2taxid_parse_sqlite(self, dci: int, acc_db: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
+        """
+        Process NCBI prot.accession2taxid files, write matches directly to SQLite.
+        """
+        match_db = self.metadir + f"matches_{dci}.db"
+        
+        if os.path.exists(match_db):
+            logging.info(f"Match database {match_db} already exists, skipping dci {dci}")
+            return
+        
+        match_conn = sqlite3.connect(match_db)
+        match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
+        
+        acc_conn = sqlite3.connect(acc_db, readonly=True)
+        
+        dbs_set = set(dbs_list)
+        acc_sets = {}
+        for dbs in dbs_set:
+            cursor = acc_conn.execute("SELECT acc FROM accessions WHERE dbs = ?", (dbs,))
+            acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
+        
+        doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
+        
+        try:
+            for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
+                                     chunksize=chunksize, names=["acc", "taxid"]):
+                for dbs in dbs_set:
+                    matches = chunk[chunk["acc"].isin(acc_sets[dbs])]
+                    if not matches.empty:
+                        match_conn.executemany(
+                            "INSERT INTO matches VALUES (?, ?, ?)",
+                            [(dbs, row["acc"], row["taxid"]) for _, row in matches.iterrows()]
+                        )
+                
+                print(f"dci: {dci}, processed {chunk.shape[0]} rows")
+        except Exception as e:
+            logging.error(f"Error processing {doc}: {e}")
+        finally:
+            match_conn.commit()
+            match_conn.close()
+            acc_conn.close()
+
+    def _merge_matches_sqlite(self, dbs: str):
+        """
+        Merge all match databases for a given dbs and write final acc2taxid TSV.
+        """
+        outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
+        
+        all_matches = []
+        for dci in range(1, 11):
+            match_db = self.metadir + f"matches_{dci}.db"
+            if os.path.exists(match_db):
+                conn = sqlite3.connect(match_db)
+                cursor = conn.execute("SELECT acc, taxid FROM matches WHERE dbs = ?", (dbs,))
+                all_matches.extend(cursor.fetchall())
+                conn.close()
+        
+        if all_matches:
+            df = pd.DataFrame(all_matches, columns=["acc", "taxid"])
+            df = df.drop_duplicates(subset="acc")
+            df.to_csv(outfile, sep="\t", index=False)
+            
+            conn = sqlite3.connect(self.protein_db_path)
+            total_acc = conn.execute(
+                "SELECT COUNT(*) FROM accessions WHERE dbs = ?", (dbs,)
+            ).fetchone()[0]
+            matched = df.shape[0]
+            conn.close()
+            
+            with open(self.metadir + f"{dbs}_acc2taxid.merge.report", "w") as f:
+                f.write(f"total_accessions\t{matched}\n")
+                f.write(f"matched\t{matched}\n")
+                f.write(f"unmatched\t{total_acc - matched}\n")
+        
+        for dci in range(1, 11):
+            match_db = self.metadir + f"matches_{dci}.db"
+            if os.path.exists(match_db):
+                os.remove(match_db)
+
     def get_prot(self):
         """
         download ncbi protein acc2taxid files.
         :return:
         """
-        acc2tax_dir = self.metadir + "prot.accession2taxid/"
+        acc2tax_dir = self.prot_acc2tax_dir
 
         if not os.path.isdir(acc2tax_dir):
             os.makedirs(acc2tax_dir, exist_ok=True)
@@ -1155,9 +1733,7 @@ class setup_dl:
         for si in range(1, 11):
             file = f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.{si}.gz"
             filename = os.path.basename(file)
-            destination_file = os.path.join(
-                self.metadir, "prot.accession2taxid", filename
-            )
+            destination_file = os.path.join(acc2tax_dir, filename)
             fexist = os.path.exists(destination_file)
             print(f"file {filename} exists: {fexist}")
             tries = 0
@@ -1167,9 +1743,10 @@ class setup_dl:
                         [
                             "wget",
                             "-P",
-                            self.metadir + "prot.accession2taxid/",
-                            f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.FULL.{si}.gz",
-                        ]
+                            acc2tax_dir,
+                            file,
+                        ],
+                        check=False,
                     )
                 except subprocess.CalledProcessError as e:
                     print(f"failed download protein taxonomy {filename}")
@@ -1180,9 +1757,417 @@ class setup_dl:
                         )
                         raise SystemExit()
                 else:
-                    fexist = True
+                    fexist = os.path.exists(destination_file)
 
         return acc2tax_dir
+
+    def get_nuc(self):
+        """
+        download ncbi nucleotide acc2taxid files.
+        :return:
+        """
+        acc2tax_dir = self.nucl_acc2tax_dir
+
+        if not os.path.isdir(acc2tax_dir):
+            os.makedirs(acc2tax_dir, exist_ok=True)
+
+        for si in range(1, 25):
+            file = f"https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/accession2taxid/nucl.accession2taxid.{si}.gz"
+            filename = os.path.basename(file)
+            destination_file = os.path.join(acc2tax_dir, filename)
+            fexist = os.path.exists(destination_file)
+            print(f"file {filename} exists: {fexist}")
+            if fexist:
+                continue
+            tries = 0
+            while not fexist:
+                try:
+                    subprocess.run(
+                        [
+                            "wget",
+                            "-P",
+                            acc2tax_dir,
+                            file,
+                        ],
+                        check=False,
+                    )
+                except subprocess.CalledProcessError as e:
+                    print(f"failed download nucleotide taxonomy {filename}")
+                    tries += 1
+                    if tries == 10:
+                        logging.info(
+                            f"tried downloading {filename} 10 times. check connection. exiting."
+                        )
+                        raise SystemExit()
+                else:
+                    fexist = os.path.exists(destination_file)
+
+        return acc2tax_dir
+
+    def nuc_metadata(self, use_sqlite=True):
+        """
+        merge accession and taxonomy info from nuc fasta files.
+        Uses SQLite for memory-efficient processing and taxid population.
+        """
+        if use_sqlite:
+            self.init_nucleotide_accessions_db()
+            self.populate_nucleotide_taxids_sqlite()
+            self._export_nuc_acc2taxid()
+        else:
+            self._nuc_metadata_original()
+
+    def _nuc_metadata_original(self):
+        """
+        Original nuc_metadata implementation for fallback.
+        """
+        outfile = "acc2taxid.tsv"
+
+        if self.update:
+            if os.path.isfile(self.metadir + outfile):
+                os.remove(self.metadir + outfile)
+
+        if os.path.isfile(self.metadir + outfile):
+            acc2tax = pd.read_csv(self.metadir + outfile, sep="\t")
+            check = []
+            for dbs, fl_list in self.fastas["nuc"].items():
+                for fl in fl_list:
+                    flb = os.path.basename(fl)
+                    if flb not in acc2tax.file.values:
+                        check.append(flb)
+
+            if len(check) == 0:
+                logging.info("acc2taxid.tsv found for all nuc files.")
+                return
+            else:
+                if self.test:
+                    logging.info("acc2taxid.tsv not found for {}".format(check))
+                    return
+                else:
+                    logging.info(
+                        f"acc2taxid.tsv not found for nuc files: {check}. creating.."
+                    )
+                    os.system(f"rm {self.metadir + outfile}")
+        else:
+            if self.test:
+                logging.info("acc2taxid.tsv not found.")
+            else:
+                logging.info("acc2taxid.tsv not found. creating...")
+
+        tax2acc = []
+
+        for dbs, fl_list in self.fastas["nuc"].items():
+            for fl in fl_list:
+                temp_file = self.metadir + dbs + "_temp.tsv"
+
+                ignore_patterns = ""
+                if dbs == "virosaurus":
+                    ignore_patterns = "GENE"
+
+                grep_sequence_identifiers(fl, temp_file, ignore=ignore_patterns)
+
+                if dbs == "kraken2":
+                    dbacc = pd.read_csv(
+                        temp_file, sep="|", names=["suffix", "taxid", "acc"]
+                    )
+                    dbacc["taxid"] = dbacc["taxid"].astype(str)
+                    dbacc["file"] = os.path.basename(fl)
+                    dbacc["acc_in_file"] = dbacc[["suffix", "taxid", "acc"]].agg(
+                        "|".join, axis=1
+                    )
+
+                    dbacc = dbacc[["acc", "taxid", "file", "acc_in_file"]]
+
+                    tax2acc.append(dbacc)
+                    continue
+
+                sed_out_after_dot(temp_file)
+
+                dbacc = pd.read_csv(temp_file, sep="\t", header=None)
+
+                dbacc = dbacc.rename(columns={0: "acc"})
+                dbacc["file"] = os.path.basename(fl)
+
+                if dbs == "virosaurus":
+
+                    def viro_acc(x):
+                        acc = x.split(".")[0]
+                        return f"{acc}:{acc};"
+
+                    dbacc["acc_in_file"] = dbacc.acc.apply(viro_acc)
+
+                else:
+                    dbacc["acc_in_file"] = dbacc.acc
+
+                tax2acc.append(dbacc)
+
+                os.system(f"rm {temp_file}")
+
+        tax2acc = pd.concat(tax2acc)
+
+        tax2acc.to_csv(self.metadir + outfile, sep="\t", index=False)
+
+    def init_nucleotide_accessions_db(self):
+        """
+        Initialize SQLite database with nucleotide accessions from FASTA files.
+        Stores: dbs, acc, acc_in_file, taxid (null), file
+        """
+        db_path = self.nucleotide_db_path
+        
+        conn = sqlite3.connect(db_path)
+        
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS nucleotide_accessions (
+                dbs TEXT,
+                acc TEXT,
+                acc_in_file TEXT,
+                taxid INTEGER,
+                file TEXT,
+                PRIMARY KEY (dbs, acc)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nuc_acc ON nucleotide_accessions(acc)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_nuc_dbs ON nucleotide_accessions(dbs)")
+        
+        existing_dbs = set()
+        cursor = conn.execute("SELECT DISTINCT dbs FROM nucleotide_accessions")
+        for row in cursor:
+            existing_dbs.add(row[0])
+        
+        for dbs, fl_list in self.fastas["nuc"].items():
+            if dbs in existing_dbs:
+                logging.info(f"Database {dbs} already exists in nucleotide_accessions.db, skipping")
+                continue
+            
+            for fl in fl_list:
+                if not os.path.isfile(fl):
+                    logging.warning(f"FASTA file not found: {fl}")
+                    continue
+                
+                if self.test:
+                    logging.info(f"Test mode: would process {dbs} from {os.path.basename(fl)}")
+                    continue
+                
+                logging.info(f"Processing {dbs} from {os.path.basename(fl)}")
+                
+                filename = os.path.basename(fl)
+                
+                if dbs == "kraken2":
+                    records = self._parse_kraken2_fasta(fl, dbs, filename)
+                elif dbs == "virosaurus":
+                    records = self._parse_virosaurus_fasta(fl, dbs, filename)
+                else:
+                    records = self._parse_standard_fasta(fl, dbs, filename)
+                
+                if records:
+                    for i in range(0, len(records), self.batch_size):
+                        batch = records[i:i+self.batch_size]
+                        conn.executemany(
+                            "INSERT OR IGNORE INTO nucleotide_accessions (dbs, acc, acc_in_file, taxid, file) VALUES (?, ?, ?, NULL, ?)",
+                            batch
+                        )
+                    conn.commit()
+                
+                logging.info(f"Inserted accessions for {dbs}/{filename}")
+        
+        conn.close()
+        logging.info(f"Nucleotide accession database initialized: {db_path}")
+
+    def _parse_kraken2_fasta(self, fl, dbs, filename):
+        """
+        Parse kraken2 FASTA format: >accession|taxid|...
+        Returns all records.
+        """
+        records = []
+        with gzip.open(fl, "rt") as f:
+            for line in f:
+                if not line.startswith(">"):
+                    continue
+                line = line[1:].strip()
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    suffix = parts[0]
+                    taxid = parts[1]
+                    acc = parts[2]
+                    acc_in_file = f"{suffix}|{taxid}|{acc}"
+                    records.append((dbs, acc, acc_in_file, filename))
+        return records
+
+    def _parse_virosaurus_fasta(self, fl, dbs, filename):
+        """
+        Parse virosaurus FASTA format: >accession.version:GENE:...
+        Returns all records.
+        """
+        records = []
+        with gzip.open(fl, "rt") as f:
+            for line in f:
+                if not line.startswith(">"):
+                    continue
+                line = line[1:].strip()
+                parts = line.split()
+                if not parts:
+                    continue
+                acc_full = parts[0]
+                acc = acc_full.split(".")[0]
+                acc_in_file = f"{acc}:{acc};"
+                records.append((dbs, acc, acc_in_file, filename))
+        return records
+
+    def _parse_standard_fasta(self, fl, dbs, filename):
+        """
+        Parse standard FASTA format: >accession description
+        Returns all records.
+        """
+        records = []
+        with gzip.open(fl, "rt") as f:
+            for line in f:
+                if not line.startswith(">"):
+                    continue
+                line = line[1:].strip()
+                parts = line.split()
+                if not parts:
+                    continue
+                acc = parts[0]
+                acc_in_file = acc
+                records.append((dbs, acc, acc_in_file, filename))
+        return records
+
+    def populate_nucleotide_taxids_sqlite(self):
+        """
+        Populate taxid column using NCBI nucl.accession2taxid files.
+        """
+        db_path = self.nucleotide_db_path
+        
+        conn = sqlite3.connect(db_path)
+        
+        other_dbs = []
+        cursor = conn.execute(
+            "SELECT DISTINCT dbs FROM nucleotide_accessions WHERE taxid IS NULL"
+        )
+        for row in cursor:
+            dbs = row[0]
+            if conn.execute(
+                "SELECT COUNT(*) FROM nucleotide_accessions WHERE dbs = ? AND taxid IS NULL",
+                (dbs,)
+            ).fetchone()[0] > 0:
+                other_dbs.append(dbs)
+        
+        if not other_dbs:
+            logging.info("All nucleotide databases already have taxids")
+            conn.close()
+            return
+        
+        acc2tax_dir = self.get_nuc()
+        
+        threads = [
+            Thread(target=self._parse_nucleotide_taxids_thread, args=(dci, db_path, acc2tax_dir, other_dbs))
+            for dci in range(1, 25)
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        
+        for dbs in other_dbs:
+            matched = conn.execute(
+                "SELECT COUNT(*) FROM nucleotide_accessions WHERE dbs = ? AND taxid IS NOT NULL",
+                (dbs,)
+            ).fetchone()[0]
+            total = conn.execute(
+                "SELECT COUNT(*) FROM nucleotide_accessions WHERE dbs = ?",
+                (dbs,)
+            ).fetchone()[0]
+            logging.info(f"{dbs}: {matched}/{total} accessions matched to taxid")
+        
+        conn.close()
+
+    def _parse_nucleotide_taxids_thread(self, dci: int, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
+        """
+        Thread worker to process NCBI nucl.accession2taxid files.
+        """
+        match_db = self.metadir + f"nuc_matches_{dci}.db"
+        
+        if os.path.exists(match_db):
+            return
+        
+        match_conn = sqlite3.connect(match_db)
+        match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
+        
+        acc_conn = sqlite3.connect(db_path, readonly=True)
+        
+        dbs_set = set(dbs_list)
+        acc_sets = {}
+        for dbs in dbs_set:
+            cursor = acc_conn.execute("SELECT acc FROM nucleotide_accessions WHERE dbs = ?", (dbs,))
+            acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
+        
+        doc = acc2tax_dir + f"nucl.accession2taxid.{dci}.gz"
+        
+        if not os.path.isfile(doc):
+            match_conn.close()
+            acc_conn.close()
+            return
+        
+        try:
+            for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
+                                     chunksize=chunksize, names=["acc", "taxid"]):
+                for dbs in dbs_set:
+                    matches = chunk[chunk["acc"].isin(acc_sets[dbs])]
+                    if not matches.empty:
+                        match_conn.executemany(
+                            "INSERT INTO matches VALUES (?, ?, ?)",
+                            [(dbs, row["acc"], row["taxid"]) for _, row in matches.iterrows()]
+                        )
+        except Exception as e:
+            logging.error(f"Error processing {doc}: {e}")
+        finally:
+            match_conn.commit()
+            match_conn.close()
+            acc_conn.close()
+        
+        if not os.path.exists(match_db):
+            return
+        
+        conn = sqlite3.connect(db_path)
+        
+        for dbs in dbs_list:
+            temp_conn = sqlite3.connect(self.metadir + f"nuc_matches_{dci}.db")
+            cursor = temp_conn.execute("SELECT acc, taxid FROM matches WHERE dbs = ?", (dbs,))
+            for acc, taxid in cursor.fetchall():
+                conn.execute(
+                    "UPDATE nucleotide_accessions SET taxid = ? WHERE dbs = ? AND acc = ?",
+                    (taxid, dbs, acc)
+                )
+            temp_conn.close()
+        
+        conn.commit()
+        conn.close()
+        
+        os.remove(match_db)
+
+    def _export_nuc_acc2taxid(self):
+        """
+        Export nucleotide_accessions to acc2taxid.tsv for backward compatibility.
+        """
+        outfile = self.metadir + "acc2taxid.tsv"
+        
+        if os.path.isfile(outfile):
+            logging.info(f"{outfile} already exists")
+            return
+        
+        db_path = self.nucleotide_db_path
+        
+        if not os.path.isfile(db_path):
+            logging.error(f"Nucleotide accession database not found")
+            return
+        
+        conn = sqlite3.connect(db_path)
+        df = pd.read_sql("SELECT acc, taxid, file, acc_in_file FROM nucleotide_accessions", conn)
+        conn.close()
+        
+        df["taxid"] = df["taxid"].astype(str)
+        
+        df.to_csv(outfile, sep="\t", index=False)
+        logging.info(f"Generated {outfile}")
 
 
 def untax_get(taxdump, odir, dbname, sdir="taxonomy/"):

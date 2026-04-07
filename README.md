@@ -382,6 +382,45 @@ Version information is captured:
 
 ---
 
+### Database Configuration
+
+Database installation is controlled via `sources.yaml`. The `install_config.py` file
+only handles hosts and software-specific flags (kraken2, centrifuge, etc.).
+
+**Configuration Options per Database:**
+
+| Field           | Values                                          | Description                           |
+| --------------- | ----------------------------------------------- | ------------------------------------- |
+| `install`       | `true`/`false`                                  | Enable/disable download               |
+| `install_types` | `["filter"]`, `["prot"]`, `["nuc"]`, `["host"]` | Which indices to build                |
+| `db_key`        | `filter`, `prot`, `nuc`, `host`                 | Storage location (optional, inferred) |
+
+**Categories in sources.yaml:**
+
+| Category        | Description                           | install_types           |
+| --------------- | ------------------------------------- | ----------------------- |
+| `ribosomal_rna` | 16S rRNA databases                    | `["filter"]`            |
+| `protein`       | UniRef, SwissProt, RVDB               | `["prot"]`              |
+| `nucleotide`    | Virosaurus                            | `["nuc"]`               |
+| `refseq`        | RefSeq viral/bacterial protein/genome | `["prot"]` or `["nuc"]` |
+
+**Example - Enable SILVA 16S and build BWA index:**
+
+```yaml
+databases:
+  ribosomal_rna:
+    silva_16s:
+      url: "https://www.arb-silva.de/..."
+      install: true
+      install_types: ["filter"]
+      db_key: "filter"
+```
+
+**Adding New Databases:**
+
+Simply add an entry to the appropriate category in `sources.yaml`. The installation
+code automatically discovers and processes all enabled databases - no code changes needed.
+
 ## Building with Custom Request Sequences
 
 To build the image with request sequences included at build time:
