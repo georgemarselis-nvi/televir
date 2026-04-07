@@ -1053,18 +1053,22 @@ class setup_dl:
         doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
         mchunks = {i: [] for i in meta_dict}
         processed = 0
-        reader = pd.read_csv(
-            doc, compression="gzip", sep="\t", chunksize=int(chunksize)
-        )  # , iterator=True)
-        for ix, docf in enumerate(reader):
-            docf.columns = ["acc", "taxid"]
-            for dbi, ids in meta_dict.items():
-                rnv = pd.merge(left=ids, right=docf, left_on="acc", right_on="acc")
-                mchunks[dbi].append(rnv)
+        try:
+            reader = pd.read_csv(
+                doc, compression="gzip", sep="\t", chunksize=int(chunksize)
+            )  # , iterator=True)
+            for ix, docf in enumerate(reader):
+                docf.columns = ["acc", "taxid"]
+                for dbi, ids in meta_dict.items():
+                    rnv = pd.merge(left=ids, right=docf, left_on="acc", right_on="acc")
+                    mchunks[dbi].append(rnv)
 
-            processed += docf.shape[0]
-            #
-            print(f"dci: {dci}, {processed} lines processed")
+                processed += docf.shape[0]
+                #
+                print(f"dci: {dci}, {processed} lines processed")
+        except Exception as e:
+            logging.error(f"Error processing {doc}: {e}. Process will not complete with all available taxids. For complete process, delete {self.metadir}prot.accession2taxid/ and restart.")
+
 
         for dbi in mchunks.keys():
             chk = pd.concat(mchunks[dbi])

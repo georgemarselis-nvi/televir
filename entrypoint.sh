@@ -49,11 +49,6 @@ setup_config() {
         cp /opt/televir-repo/config.py "$INSTALL_HOME/config.py"
     fi
     
-    # Copy config to repo directory for main.py import
-    if [ -f "/opt/televir-repo/config.py" ]; then
-        cp /opt/televir-repo/config.py /opt/televir-repo/config.py
-    fi
-    
     # Copy TelevirLayout config to data directory
     if [ -f "/opt/televir-repo/install_scripts/config.py" ]; then
         cp /opt/televir-repo/install_scripts/config.py "$INSTALL_HOME/install_scripts_config.py"
