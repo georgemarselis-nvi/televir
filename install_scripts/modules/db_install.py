@@ -1245,7 +1245,7 @@ class setup_dl:
         acc2tax_dir = self.get_prot()
         
         threads = [
-            Thread(target=self._parse_protein_taxids_thread, args=(dci, db_path, acc2tax_dir, other_dbs))
+            Thread(target=self._parse_protein_taxids_thread, args=(dci, self.protein_db_path, acc2tax_dir, other_dbs))
             for dci in range(1, 11)
         ]
         for th in threads:
