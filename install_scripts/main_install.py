@@ -908,36 +908,37 @@ class main_setup:
         logging.info("install prepped")
 
         # Build indices for "filter" databases (16S rRNA, etc.)
-        for fname, fpath in prepdl.fastas["filter"].items():
-            if self._should_build_index("filter", fname, "bwa"):
-                bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
-                self.installed_software.append(
-                    self.software_install_string("bwa-filter")
-                )
-                self.utilities.add_software(
-                    self.utilities.software_item(
-                        "bwa-filter",
-                        sofprep.dbs["bwa"]["fasta"],
-                        fname,
-                        bwa_install,
-                        sofprep.envs["ROOT"] + sofprep.envs["bwa"],
-                        tag="filter",
-                        binary_name="bwa",
+        for fname, fd_list in prepdl.fastas["filter"].items():
+            for fpath in fd_list:
+                if self._should_build_index("filter", fname, "bwa"):
+                    bwa_install = sofprep.bwa_install(dbname=fname, reference=fpath)
+                    self.installed_software.append(
+                        self.software_install_string("bwa-filter")
                     )
-                )
-                db_cat, _db_name = self.layout.DATABASE_NAMES.get("install_bwa_filter", ("bwa", fname))
-                db_entry = get_db_entry(db_cat, _db_name)
-                db_desc = db_entry.get("description") if db_entry else None
-                self.utilities.add_database(
-                    self.utilities.database_item(
-                        name=fname,
-                        path=sofprep.dbs["bwa"]["fasta"],
-                        installed=bwa_install,
-                        software=db_cat,
-                        db_type="filter",
-                        description=db_desc,
+                    self.utilities.add_software(
+                        self.utilities.software_item(
+                            "bwa-filter",
+                            sofprep.dbs["bwa"]["fasta"],
+                            fname,
+                            bwa_install,
+                            sofprep.envs["ROOT"] + sofprep.envs["bwa"],
+                            tag="filter",
+                            binary_name="bwa",
+                        )
                     )
-                )
+                    db_cat, _db_name = self.layout.DATABASE_NAMES.get("install_bwa_filter", ("bwa", fname))
+                    db_entry = get_db_entry(db_cat, _db_name)
+                    db_desc = db_entry.get("description") if db_entry else None
+                    self.utilities.add_database(
+                        self.utilities.database_item(
+                            name=fname,
+                            path=sofprep.dbs["bwa"]["fasta"],
+                            installed=bwa_install,
+                            software=db_cat,
+                            db_type="filter",
+                            description=db_desc,
+                        )
+                    )
 
         for fname, fd_list in prepdl.fastas["host"].items():
 
