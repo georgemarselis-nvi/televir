@@ -443,7 +443,7 @@ class setup_dl:
             return False
 
         if self.verify_file_integrity(filepath, filename):
-            self.fastas[db_key][fname] = filepath
+            self.fastas[db_key][fname] = [filepath]
             self.db_versions[fname] = {
                 "version": version or self.get_file_mod_date(filepath),
                 "source_url": source_url,
@@ -467,7 +467,7 @@ class setup_dl:
         filepath = self.seqdir + filename
         if os.path.isfile(filepath):
             if self.verify_file_integrity(filepath, filename):
-                self.fastas["host"][fname] = filepath
+                self.fastas["host"][fname] = [filepath]
                 logging.info(f"{filename} found and verified.")
                 return True
             logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
