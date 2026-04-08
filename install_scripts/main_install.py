@@ -1051,32 +1051,32 @@ class main_setup:
                     )
 
                 if self.layout.install_blast:
-                    if fname == "refseq":
-                        success_install = sofprep.blast_install(
-                            reference=fpath,
-                            dbname=f"refseq_{self.organism}_prot",
-                            nuc=False,
-                            taxid_map=sofprep.metadir + "acc2taxid.prot.map",
-                            args="-parse_seqids",
-                            title=f"refseq {self.organism} prot",
+
+                    success_install = sofprep.blast_install(
+                        reference=fpath,
+                        dbname=f"refseq_{self.organism}_prot",
+                        nuc=False,
+                        taxid_map=sofprep.metadir + "acc2taxid.prot.map",
+                        args="-parse_seqids",
+                        title=f"refseq {self.organism} prot",
+                    )
+
+                    if success_install:
+                        self.installed_software.append(
+                            self.software_install_string("blastp")
                         )
 
-                        if success_install:
-                            self.installed_software.append(
-                                self.software_install_string("blastp")
-                            )
-
-                        sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
-                        self.utilities.add_software(
-                            self.utilities.software_item(
-                                sw_name,
-                                sofprep.dbs["blast"]["db"],
-                                sw_tag,
-                                success_install,
-                                sofprep.envs["ROOT"] + sofprep.envs["blast"],
-                                binary_name="blastn",
-                            )
+                    sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
+                    self.utilities.add_software(
+                        self.utilities.software_item(
+                            sw_name,
+                            sofprep.dbs["blast"]["db"],
+                            sw_tag,
+                            success_install,
+                            sofprep.envs["ROOT"] + sofprep.envs["blast"],
+                            binary_name="blastn",
                         )
+                    )
 
         # install nuc databases using local files.
         for fname, fd_list in prepdl.fastas["nuc"].items():
