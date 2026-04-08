@@ -1085,8 +1085,8 @@ class setup_dl:
                             "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid, file) VALUES (?, ?, ?, ?, NULL, ?)",
                             batch
                         )
-                            conn.commit()
-                            batch = []
+                        conn.commit()
+                        batch = []
             
             if batch:
                 conn.executemany(
