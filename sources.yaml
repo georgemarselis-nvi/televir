@@ -222,8 +222,9 @@ databases:
       ftp_url: "ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
       description: "NCBI taxonomy database dump"
       file: "taxdump.tar.gz"
-      install: false
-      install_types: []
+      install: true
+      install_types: ["metadata"]
+      db_key: "metadata"
 
   # ---------------------------------------------------------------------------
   # RefSeq Databases (used by get_refseq_entry + downloader)

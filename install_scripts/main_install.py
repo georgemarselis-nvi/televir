@@ -302,6 +302,9 @@ class main_setup:
             else:
                 self._download_category_databases(category, db_list)
 
+        # Download taxdump if enabled in sources.yaml
+        self._download_taxdump()
+
     def _download_category_databases(self, category: str, db_configs: list):
         """
         Download databases for a category using config from sources.yaml.
@@ -412,6 +415,31 @@ class main_setup:
         
         install_types = get_install_types(category, db_name)
         return index_type in install_types or index_type in ["bwa", "diamond", "minimap2", "fastviromeexplorer"] and db_key in install_types
+
+    def _download_taxdump(self):
+        """Download taxdump if enabled in sources.yaml and not present."""
+        taxdump_entry = get_db_entry('taxonomy', 'taxdump')
+        if not taxdump_entry:
+            logging.info("Taxdump entry not found in sources.yaml, skipping")
+            return
+        
+        if not taxdump_entry.get('install', False):
+            logging.info("Taxdump installation disabled in sources.yaml, skipping")
+            return
+        
+        if self.wdir.check_taxdump_extracted():
+            logging.info("Taxdump already extracted, skipping download")
+            return
+        
+        taxdump_url = taxdump_entry.get('url')
+        taxdump_path = os.path.join(self.wdir.metadir, "taxdump.tar.gz")
+        
+        success = self.wdir.dl_taxdump(taxdump_url, taxdump_path)
+        if success:
+            self.wdir.extract_taxdump(taxdump_path)
+            logging.info("Taxdump downloaded and extracted successfully")
+        else:
+            logging.error("Failed to download taxdump")
 
     def dl_metadata_prot(self):
         """
@@ -1140,6 +1168,17 @@ class main_setup:
                         )
                     )
 
+                    self.utilities.add_database(
+                        self.utilities.database_item(
+                            name=sw_tag,
+                            db_path=sofprep.dbs["fastviromeexplorer"]["db"],
+                            fasta_path=fname,
+                            installed=install_success,
+                            software="fastviromeexplorer",
+                            db_type="viral",
+                        )
+                    )
+
                 if self.layout.install_blast:
                     install_success = sofprep.blast_install(
                         reference=fpath,
@@ -1163,6 +1202,17 @@ class main_setup:
                             sw_tag,
                             install_success,
                             sofprep.envs["ROOT"] + sofprep.envs["blast"],
+                        )
+                    )
+
+                    self.utilities.add_database(
+                        self.utilities.database_item(
+                            name=sw_tag,
+                            db_path=sofprep.dbs["blast"]["db"],
+                            fasta_path=fname,
+                            installed=install_success,
+                            software="blastn",
+                            db_type="viral",
                         )
                     )
 

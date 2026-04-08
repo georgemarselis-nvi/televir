@@ -455,6 +455,69 @@ class setup_dl:
             logging.error(f"Downloaded {filename} is corrupted.")
             return False
 
+    def dl_taxdump(self, url: str = None, dest_path: str = None) -> bool:
+        """Download taxdump.tar.gz from NCBI to metadata directory."""
+        if url is None:
+            url = "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"
+        
+        if dest_path is None:
+            dest_path = os.path.join(self.metadir, "taxdump.tar.gz")
+        
+        if os.path.exists(dest_path):
+            logging.info("Taxdump already exists")
+            return True
+        
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        
+        logging.info(f"Downloading taxdump from {url}")
+        try:
+            subprocess.run(
+                ["wget", "-q", "-O", dest_path, url],
+                check=True,
+            )
+        except subprocess.CalledProcessError:
+            logging.error("Failed to download taxdump with wget, trying curl")
+            try:
+                subprocess.run(
+                    ["curl", "-fsSL", "-o", dest_path, url],
+                    check=True,
+                )
+            except subprocess.CalledProcessError:
+                logging.error("Failed to download taxdump")
+                return False
+        
+        logging.info("Taxdump downloaded successfully")
+        return True
+
+    def extract_taxdump(self, taxdump_path: str = None) -> bool:
+        """Extract taxdump to metadata/taxonomy/ directory."""
+        if taxdump_path is None:
+            taxdump_path = os.path.join(self.metadir, "taxdump.tar.gz")
+        
+        if not os.path.exists(taxdump_path):
+            logging.error(f"Taxdump not found: {taxdump_path}")
+            return False
+        
+        taxonomy_dir = os.path.join(self.metadir, "taxonomy")
+        os.makedirs(taxonomy_dir, exist_ok=True)
+        
+        logging.info(f"Extracting taxdump to {taxonomy_dir}")
+        try:
+            subprocess.run(
+                ["tar", "-xvzf", taxdump_path, "-C", taxonomy_dir],
+                check=True,
+            )
+            logging.info(f"Extracted taxdump to {taxonomy_dir}")
+            return True
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to extract taxdump: {e}")
+            return False
+
+    def check_taxdump_extracted(self) -> bool:
+        """Check if taxdump has been extracted (names.dmp exists)."""
+        names_dmp = os.path.join(self.metadir, "taxonomy", "names.dmp")
+        return os.path.exists(names_dmp)
+
     def ftp_host_file(self, host, source, filename, fname):
         """
         download file from ftp host.
@@ -561,7 +624,7 @@ class setup_dl:
             )
 
             if ftp_download:
-                fpath = self.fastas["host"].get(host_name)
+                fpath = self.fastas["host"].get(host_name, [None])[0]
                 if fpath:
                     gcf_version = host.remote_filename.split("_")[0]
                     source_url = f"ftp://{host.remote_host}/{host.remote_path}{host.remote_filename}"
