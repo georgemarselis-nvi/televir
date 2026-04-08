@@ -73,9 +73,18 @@ class AccessionDBCLI:
                 page_size = cursor.fetchone()[0] or 4096
             except sqlite3.OperationalError:
                 page_size = 4096
-            cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
-            pages = cursor.fetchone()[0] or 0
-            protein_size = (pages * page_size) / (1024 * 1024)
+            
+            try:
+                cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
+                pages = cursor.fetchone()[0] or 0
+            except sqlite3.OperationalError:
+                try:
+                    cursor.execute("SELECT SUM(page_count) FROM pragma_page_count()")
+                    pages = cursor.fetchone()[0] or 0
+                except:
+                    pages = 0
+            
+            protein_size = (pages * page_size / (1024 * 1024)) if pages > 0 else (os.path.getsize(self.protein_db) / (1024 * 1024) if os.path.exists(self.protein_db) else 0)
             conn.close()
         else:
             protein_size = 0
@@ -93,9 +102,18 @@ class AccessionDBCLI:
                 page_size = cursor.fetchone()[0] or 4096
             except sqlite3.OperationalError:
                 page_size = 4096
-            cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
-            pages = cursor.fetchone()[0] or 0
-            nuc_size = (pages * page_size) / (1024 * 1024)
+            
+            try:
+                cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
+                pages = cursor.fetchone()[0] or 0
+            except sqlite3.OperationalError:
+                try:
+                    cursor.execute("SELECT SUM(page_count) FROM pragma_page_count()")
+                    pages = cursor.fetchone()[0] or 0
+                except:
+                    pages = 0
+            
+            nuc_size = (pages * page_size / (1024 * 1024)) if pages > 0 else (os.path.getsize(self.nucleotide_db) / (1024 * 1024) if os.path.exists(self.nucleotide_db) else 0)
             conn.close()
         else:
             nuc_size = 0
