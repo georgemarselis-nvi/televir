@@ -1535,18 +1535,18 @@ class setup_dl:
 
                 kept = []
                 with gzip.open(fpath, "rb") as fn:
-                ln = str(fn.readline(), "utf-8")
-                while ln:
-                    if ln[0] == ">":
-                        tp = ln.split()[0][1:]
-
-                        if dbs == "rvdb":
-                            tp = tp.split("|")[2]
-                        kept.append(tp)
-                    else:
-                        ln = str(fn.readline(), "utf-8")
-                        continue
                     ln = str(fn.readline(), "utf-8")
+                    while ln:
+                        if ln[0] == ">":
+                            tp = ln.split()[0][1:]
+
+                            if dbs == "rvdb":
+                                tp = tp.split("|")[2]
+                            kept.append(tp)
+                        else:
+                            ln = str(fn.readline(), "utf-8")
+                            continue
+                        ln = str(fn.readline(), "utf-8")
 
             dict_ids[dbs] = pd.DataFrame(kept, columns=["acc"])
 
