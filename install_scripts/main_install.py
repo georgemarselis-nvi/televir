@@ -1136,36 +1136,35 @@ class main_setup:
                             install_success,
                             sofprep.envs["ROOT"]
                             + sofprep.envs["fastviromeexplorer"],
-                            binary_name="fve",
+                            binary_name="FastViromeExplorer",
                         )
                     )
 
                 if self.layout.install_blast:
-                    if fname in ["refseq", "centrifuge_bacteria"]:
-                        install_success = sofprep.blast_install(
-                            reference=fpath,
-                            dbname=fname,
-                            nuc=True,
-                            taxid_map=sofprep.metadir + "acc2taxid.nuc.map",
-                            args="-parse_seqids",
-                            title=f"refseq {self.organism} genome",
+                    install_success = sofprep.blast_install(
+                        reference=fpath,
+                        dbname=fname,
+                        nuc=True,
+                        taxid_map=sofprep.metadir + "acc2taxid.nuc.map",
+                        args="-parse_seqids",
+                        title=f"refseq {self.organism} genome",
+                    )
+
+                    if install_success:
+                        self.installed_software.append(
+                            self.software_install_string("blastn")
                         )
 
-                        if install_success:
-                            self.installed_software.append(
-                                self.software_install_string("blastn")
-                            )
-
-                        sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
-                        self.utilities.add_software(
-                            self.utilities.software_item(
-                                sw_name,
-                                sofprep.dbs["blast"]["db"],
-                                sw_tag,
-                                install_success,
-                                sofprep.envs["ROOT"] + sofprep.envs["blast"],
-                            )
+                    sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_blast", ("blast", "genome"))
+                    self.utilities.add_software(
+                        self.utilities.software_item(
+                            sw_name,
+                            sofprep.dbs["blast"]["db"],
+                            sw_tag,
+                            install_success,
+                            sofprep.envs["ROOT"] + sofprep.envs["blast"],
                         )
+                    )
 
                 # if nanopore:
                 #    if self.layout.install_desamba:
