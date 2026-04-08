@@ -1171,8 +1171,7 @@ class main_setup:
                     self.utilities.add_database(
                         self.utilities.database_item(
                             name=sw_tag,
-                            db_path=sofprep.dbs["fastviromeexplorer"]["db"],
-                            fasta_path=fname,
+                            path=sofprep.dbs["fastviromeexplorer"]["db"],
                             installed=install_success,
                             software="fastviromeexplorer",
                             db_type="viral",
@@ -1208,8 +1207,7 @@ class main_setup:
                     self.utilities.add_database(
                         self.utilities.database_item(
                             name=sw_tag,
-                            db_path=sofprep.dbs["blast"]["db"],
-                            fasta_path=fname,
+                            path=sofprep.dbs["blast"]["db"],
                             installed=install_success,
                             software="blastn",
                             db_type="viral",
