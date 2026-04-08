@@ -1053,39 +1053,39 @@ class setup_dl:
                 batch = []
                 
                 with gzip.open(fpath, "rt") as fn:
-                for line in fn:
-                    if not line.startswith(">"):
-                        continue
+                    for line in fn:
+                        if not line.startswith(">"):
+                            continue
+                        
+                        line = line[1:].strip()
+                        parts = line.split()
+                        
+                        if not parts:
+                            continue
+                        
+                        acc = parts[0]
+                        description = ""
+                        
+                        if dbs == "refseq_prot":
+                            if "[" in line and "]" in line:
+                                desc_start = line.find("[") + 1
+                                desc_end = line.find("]")
+                                description = line[desc_start:desc_end]
+                        elif dbs == "rvdb":
+                            if "|" in acc:
+                                acc_parts = acc.split("|")
+                                if len(acc_parts) >= 3:
+                                    acc = acc_parts[2]
+                        
+                        batch.append((dbs, acc, description, acc))
                     
-                    line = line[1:].strip()
-                    parts = line.split()
-                    
-                    if not parts:
-                        continue
-                    
-                    acc = parts[0]
-                    description = ""
-                    
-                    if dbs == "refseq_prot":
-                        if "[" in line and "]" in line:
-                            desc_start = line.find("[") + 1
-                            desc_end = line.find("]")
-                            description = line[desc_start:desc_end]
-                    elif dbs == "rvdb":
-                        if "|" in acc:
-                            acc_parts = acc.split("|")
-                            if len(acc_parts) >= 3:
-                                acc = acc_parts[2]
-                    
-                    batch.append((dbs, acc, description, acc))
-                    
-                    if len(batch) >= self.batch_size:
-                        conn.executemany(
-                            "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
-                            batch
-                        )
-                        conn.commit()
-                        batch = []
+                        if len(batch) >= self.batch_size:
+                            conn.executemany(
+                                "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
+                                batch
+                            )
+                            conn.commit()
+                            batch = []
             
             if batch:
                 conn.executemany(
