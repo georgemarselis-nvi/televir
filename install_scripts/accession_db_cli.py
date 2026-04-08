@@ -68,8 +68,11 @@ class AccessionDBCLI:
             cursor.execute("SELECT COUNT(*) FROM protein_accessions WHERE taxid IS NOT NULL")
             protein_with_taxid = cursor.fetchone()[0]
             
-            cursor.execute("SELECT SUM(pgsize) FROM pragma_page_size()")
-            page_size = cursor.fetchone()[0] or 4096
+            try:
+                cursor.execute("SELECT SUM(pgsize) FROM pragma_page_size()")
+                page_size = cursor.fetchone()[0] or 4096
+            except sqlite3.OperationalError:
+                page_size = 4096
             cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
             pages = cursor.fetchone()[0] or 0
             protein_size = (pages * page_size) / (1024 * 1024)
@@ -85,8 +88,11 @@ class AccessionDBCLI:
             cursor.execute("SELECT COUNT(*) FROM nucleotide_accessions WHERE taxid IS NOT NULL")
             nuc_with_taxid = cursor.fetchone()[0]
             
-            cursor.execute("SELECT SUM(pgsize) FROM pragma_page_size()")
-            page_size = cursor.fetchone()[0] or 4096
+            try:
+                cursor.execute("SELECT SUM(pgsize) FROM pragma_page_size()")
+                page_size = cursor.fetchone()[0] or 4096
+            except sqlite3.OperationalError:
+                page_size = 4096
             cursor.execute("SELECT SUM(pages) FROM pragma_page_count()")
             pages = cursor.fetchone()[0] or 0
             nuc_size = (pages * page_size) / (1024 * 1024)

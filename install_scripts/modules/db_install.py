@@ -1020,6 +1020,7 @@ class setup_dl:
                 description TEXT,
                 acc_in_file TEXT,
                 taxid INTEGER,
+                file TEXT,
                 PRIMARY KEY (dbs, acc)
             )
         """)
@@ -1077,19 +1078,19 @@ class setup_dl:
                                 if len(acc_parts) >= 3:
                                     acc = acc_parts[2]
                         
-                        batch.append((dbs, acc, description, acc))
+                        batch.append((dbs, acc, description, acc, fpath))
                     
-                        if len(batch) >= self.batch_size:
-                            conn.executemany(
-                                "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
-                                batch
-                            )
+                    if len(batch) >= self.batch_size:
+                        conn.executemany(
+                            "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid, file) VALUES (?, ?, ?, ?, NULL, ?)",
+                            batch
+                        )
                             conn.commit()
                             batch = []
             
             if batch:
                 conn.executemany(
-                    "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid) VALUES (?, ?, ?, ?, NULL)",
+                    "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid, file) VALUES (?, ?, ?, ?, NULL, ?)",
                     batch
                 )
                 conn.commit()
