@@ -513,7 +513,7 @@ class setup_dl:
                 return False
 
             if self.verify_file_integrity(filepath, filename):
-                self.fastas["host"][fname] = filepath
+                self.fastas["host"][fname] = [filepath]
                 return True
             else:
                 logging.error(f"Downloaded {filename} is corrupted. Download failed.")
@@ -573,6 +573,8 @@ class setup_dl:
 
             return ftp_download
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             logging.warning(f"failed to download {host_name} from ftp.")
             return False
 
@@ -711,7 +713,7 @@ class setup_dl:
 
         if os.path.isfile(fprot_path):
             if self.verify_file_integrity(fprot_path, fprot):
-                self.fastas["prot"][db_key] = fprot_path
+                self.fastas["prot"][db_key] = [fprot_path]
                 self.db_versions[db_key] = {
                     "version": self.get_file_mod_date(fprot_path),
                     "source_url": source_url,
@@ -749,7 +751,7 @@ class setup_dl:
         logging.info(f"{fprot_suf} not found. downloading...")
         self.get_concat(protf, fprot_suf, host, source)
         if self.verify_file_integrity(fprot_path, fprot):
-            self.fastas["prot"][db_key] = fprot_path
+            self.fastas["prot"][db_key] = [fprot_path]
             self.db_versions[db_key] = {
                 "version": self.get_file_mod_date(fprot_path),
                 "source_url": source_url,
@@ -1035,19 +1037,22 @@ class setup_dl:
                 logging.info(f"Database {dbs} already exists in protein_accessions.db, skipping")
                 continue
             
-            if not os.path.isfile(fl):
-                logging.warning(f"FASTA file not found for {dbs}: {fl}")
-                continue
+            files = fl if isinstance(fl, list) else [fl]
             
-            if self.test:
-                logging.info(f"Test mode: would process {dbs} from {os.path.basename(fl)}")
-                continue
-            
-            logging.info(f"Processing {dbs} from {os.path.basename(fl)}")
-            
-            batch = []
-            
-            with gzip.open(fl, "rt") as fn:
+            for fpath in files:
+                if not os.path.isfile(fpath):
+                    logging.warning(f"FASTA file not found for {dbs}: {fpath}")
+                    continue
+                
+                if self.test:
+                    logging.info(f"Test mode: would process {dbs} from {os.path.basename(fpath)}")
+                    continue
+                
+                logging.info(f"Processing {dbs} from {os.path.basename(fpath)}")
+                
+                batch = []
+                
+                with gzip.open(fpath, "rt") as fn:
                 for line in fn:
                     if not line.startswith(">"):
                         continue
@@ -1276,7 +1281,7 @@ class setup_dl:
         match_conn = sqlite3.connect(match_db)
         match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
         
-        acc_conn = sqlite3.connect(db_path, readonly=True)
+        acc_conn = sqlite3.connect(db_path)
         
         dbs_set = set(dbs_list)
         acc_sets = {}
@@ -1513,20 +1518,23 @@ class setup_dl:
             if dbs in ["refseq_prot"]:
                 continue
 
-            outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
-            if os.path.isfile(outfile):
-                self.meta[dbs] = outfile
-                logging.info(f"acc2taxid map file {outfile} exists, continuing.")
-                continue
-            else:
-                if self.test:
-                    logging.info(f"acc2taxid map file {outfile} not found.")
+            files = fl if isinstance(fl, list) else [fl]
+            
+            for fpath in files:
+                outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
+                if os.path.isfile(outfile):
+                    self.meta[dbs] = outfile
+                    logging.info(f"acc2taxid map file {outfile} exists, continuing.")
                     continue
                 else:
-                    logging.info(f"acc2taxid map file {outfile} not found. creating")
+                    if self.test:
+                        logging.info(f"acc2taxid map file {outfile} not found.")
+                        continue
+                    else:
+                        logging.info(f"acc2taxid map file {outfile} not found. creating")
 
-            kept = []
-            with gzip.open(fl, "rb") as fn:
+                kept = []
+                with gzip.open(fpath, "rb") as fn:
                 ln = str(fn.readline(), "utf-8")
                 while ln:
                     if ln[0] == ">":
