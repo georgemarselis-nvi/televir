@@ -1151,15 +1151,15 @@ class setup_dl:
                         conn.commit()
                         batch = []
             
-            if batch:
-                conn.executemany(
-                    "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid, file) VALUES (?, ?, ?, ?, NULL, ?)",
-                    batch
-                )
-                conn.commit()
+                if batch:
+                    conn.executemany(
+                        "INSERT OR IGNORE INTO protein_accessions (dbs, acc, description, acc_in_file, taxid, file) VALUES (?, ?, ?, ?, NULL, ?)",
+                        batch
+                    )
+                    conn.commit()
+                
+                logging.info(f"Inserted accessions for {dbs}")
             
-            logging.info(f"Inserted accessions for {dbs}")
-        
         conn.close()
         logging.info(f"Protein accession database initialized: {db_path}")
 
