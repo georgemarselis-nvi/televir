@@ -861,6 +861,8 @@ class main_setup:
                     self.software_install_string("krakenuniq")
                 )
             sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_krakenuniq", ("krakenuniq", "default"))
+            db_entry = get_db_entry(db_cat, db_name)
+            db_desc = db_entry.get("description") if db_entry else None
             self.utilities.add_software(
                 self.utilities.software_item(
                     sw_name,
@@ -869,6 +871,17 @@ class main_setup:
                     success_install,
                     sofprep.envs["ROOT"] + sofprep.envs["krakenuniq"],
                     binary_name="krakenuniq",
+                )
+            )
+
+            self.utilities.add_database(
+                self.utilities.database_item(
+                    name=sw_name,
+                    path=sofprep.dbs["krakenuniq"]["db"],
+                    installed=success_install,
+                    software=sw_name,
+                    db_type=self.organism,
+                    description=db_desc,
                 )
             )
 

@@ -125,7 +125,7 @@ class TelevirStatusApp(ctk.CTk):
         scrollable.grid(row=0, column=0, sticky="nsew")
         
         headers = ["Name", "Category", "Description", "Available", "Installed", "Version", "Date"]
-        widths = [180, 100, 220, 90, 90, 100, 100]
+        widths = [180, 100, 320, 90, 90, 100, 100]
         
         header_frame = ctk.CTkFrame(scrollable, fg_color="#2B2B2B", corner_radius=0)
         header_frame.pack(fill="x", pady=(0, 2))
@@ -525,7 +525,7 @@ class TelevirStatusApp(ctk.CTk):
         frame.pack(fill="x", pady=2)
         
         values = [
-            (name, 180), (category, 100), (description, 220),
+            (name, 180), (category, 100), (description, 320),
             (available, 90), (installed, 90), (version, 100), (date, 100)
         ]
         

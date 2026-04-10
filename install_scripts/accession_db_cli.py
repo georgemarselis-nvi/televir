@@ -188,6 +188,7 @@ class AccessionDBCLI:
                 conn = sqlite3.connect(self.protein_db)
                 cursor = conn.cursor()
                 query = f"%{accession}%" if accession else f"%{dbs}%"
+                
                 try:
                     cursor.execute("""
                         SELECT dbs, acc, description, taxid, file
