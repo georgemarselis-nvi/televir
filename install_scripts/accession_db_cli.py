@@ -187,68 +187,126 @@ class AccessionDBCLI:
             if os.path.exists(self.protein_db):
                 conn = sqlite3.connect(self.protein_db)
                 cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT dbs, acc, description, taxid, file
-                    FROM protein_accessions
-                    WHERE acc LIKE ? OR (dbs = ? AND 1=1)
-                    LIMIT ?
-                """, (f'%{accession}%', dbs, limit) if accession else (f'%{dbs}%', dbs, limit))
-                for row in cursor.fetchall():
-                    results.append(('protein', row[1], row[2], row[3], row[4]))
+                query = f"%{accession}%" if accession else f"%{dbs}%"
+                try:
+                    cursor.execute("""
+                        SELECT dbs, acc, description, taxid, file
+                        FROM protein_accessions
+                        WHERE acc LIKE ? OR (dbs = ? AND 1=1)
+                        LIMIT ?
+                    """, (query, dbs, limit) if accession else (query, dbs, limit))
+                    for row in cursor.fetchall():
+                        results.append(('protein', row[1], row[2], row[3], row[4]))
+                except sqlite3.OperationalError:
+                    cursor.execute("""
+                        SELECT dbs, acc, description, taxid
+                        FROM protein_accessions
+                        WHERE acc LIKE ? OR (dbs = ? AND 1=1)
+                        LIMIT ?
+                    """, (query, dbs, limit) if accession else (query, dbs, limit))
+                    for row in cursor.fetchall():
+                        results.append(('protein', row[1], row[2], row[3], ''))
                 conn.close()
             
             if os.path.exists(self.nucleotide_db):
                 conn = sqlite3.connect(self.nucleotide_db)
                 cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT dbs, acc, acc_in_file, taxid, file
-                    FROM nucleotide_accessions
-                    WHERE acc LIKE ? OR (dbs = ? AND 1=1)
-                    LIMIT ?
-                """, (f'%{accession}%', dbs, limit) if accession else (f'%{dbs}%', dbs, limit))
-                for row in cursor.fetchall():
-                    results.append(('nuc', row[1], row[3], row[4], row[5] if len(row) > 4 else ''))
+                query = f"%{accession}%" if accession else f"%{dbs}%"
+                try:
+                    cursor.execute("""
+                        SELECT dbs, acc, acc_in_file, taxid, file
+                        FROM nucleotide_accessions
+                        WHERE acc LIKE ? OR (dbs = ? AND 1=1)
+                        LIMIT ?
+                    """, (query, dbs, limit) if accession else (query, dbs, limit))
+                    for row in cursor.fetchall():
+                        results.append(('nuc', row[1], row[2], row[3], row[4] if len(row) > 4 else ''))
+                except sqlite3.OperationalError:
+                    cursor.execute("""
+                        SELECT dbs, acc, acc_in_file, taxid
+                        FROM nucleotide_accessions
+                        WHERE acc LIKE ? OR (dbs = ? AND 1=1)
+                        LIMIT ?
+                    """, (query, dbs, limit) if accession else (query, dbs, limit))
+                    for row in cursor.fetchall():
+                        results.append(('nuc', row[1], row[2], row[3], ''))
                 conn.close()
         else:
             # Search both databases
             if os.path.exists(self.protein_db):
                 conn = sqlite3.connect(self.protein_db)
                 cursor = conn.cursor()
-                if accession:
-                    cursor.execute("""
-                        SELECT dbs, acc, description, taxid, file
-                        FROM protein_accessions
-                        WHERE acc LIKE ?
-                        LIMIT ?
-                    """, (f'%{accession}%', limit))
-                else:
-                    cursor.execute("""
-                        SELECT dbs, acc, description, taxid, file
-                        FROM protein_accessions
-                        LIMIT ?
-                    """, (limit,))
-                for row in cursor.fetchall():
-                    results.append(('protein', row[1], row[2], row[3], row[4]))
+                query = f"%{accession}%"
+                try:
+                    if accession:
+                        cursor.execute("""
+                            SELECT dbs, acc, description, taxid, file
+                            FROM protein_accessions
+                            WHERE acc LIKE ?
+                            LIMIT ?
+                        """, (query, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT dbs, acc, description, taxid, file
+                            FROM protein_accessions
+                            LIMIT ?
+                        """, (limit,))
+                    for row in cursor.fetchall():
+                        results.append(('protein', row[1], row[2], row[3], row[4]))
+                except sqlite3.OperationalError:
+                    if accession:
+                        cursor.execute("""
+                            SELECT dbs, acc, description, taxid
+                            FROM protein_accessions
+                            WHERE acc LIKE ?
+                            LIMIT ?
+                        """, (query, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT dbs, acc, description, taxid
+                            FROM protein_accessions
+                            LIMIT ?
+                        """, (limit,))
+                    for row in cursor.fetchall():
+                        results.append(('protein', row[1], row[2], row[3], ''))
                 conn.close()
             
             if os.path.exists(self.nucleotide_db):
                 conn = sqlite3.connect(self.nucleotide_db)
                 cursor = conn.cursor()
-                if accession:
-                    cursor.execute("""
-                        SELECT dbs, acc, acc_in_file, taxid, file
-                        FROM nucleotide_accessions
-                        WHERE acc LIKE ?
-                        LIMIT ?
-                    """, (f'%{accession}%', limit))
-                else:
-                    cursor.execute("""
-                        SELECT dbs, acc, acc_in_file, taxid, file
-                        FROM nucleotide_accessions
-                        LIMIT ?
-                    """, (limit,))
-                for row in cursor.fetchall():
-                    results.append(('nuc', row[1], row[3], row[4], row[5] if len(row) > 4 else ''))
+                query = f"%{accession}%"
+                try:
+                    if accession:
+                        cursor.execute("""
+                            SELECT dbs, acc, acc_in_file, taxid, file
+                            FROM nucleotide_accessions
+                            WHERE acc LIKE ?
+                            LIMIT ?
+                        """, (query, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT dbs, acc, acc_in_file, taxid, file
+                            FROM nucleotide_accessions
+                            LIMIT ?
+                        """, (limit,))
+                    for row in cursor.fetchall():
+                        results.append(('nuc', row[1], row[2], row[3], row[4] if len(row) > 4 else ''))
+                except sqlite3.OperationalError:
+                    if accession:
+                        cursor.execute("""
+                            SELECT dbs, acc, acc_in_file, taxid
+                            FROM nucleotide_accessions
+                            WHERE acc LIKE ?
+                            LIMIT ?
+                        """, (query, limit))
+                    else:
+                        cursor.execute("""
+                            SELECT dbs, acc, acc_in_file, taxid
+                            FROM nucleotide_accessions
+                            LIMIT ?
+                        """, (limit,))
+                    for row in cursor.fetchall():
+                        results.append(('nuc', row[1], row[2], row[3], ''))
                 conn.close()
         
         if not results:
