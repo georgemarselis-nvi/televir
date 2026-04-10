@@ -193,7 +193,8 @@ class AccessionDBCLI:
                     WHERE acc LIKE ? OR (dbs = ? AND 1=1)
                     LIMIT ?
                 """, (f'%{accession}%', dbs, limit) if accession else (f'%{dbs}%', dbs, limit))
-                results.extend(cursor.fetchall())
+                for row in cursor.fetchall():
+                    results.append(('protein', row[1], row[2], row[3], row[4]))
                 conn.close()
             
             if os.path.exists(self.nucleotide_db):
@@ -205,7 +206,8 @@ class AccessionDBCLI:
                     WHERE acc LIKE ? OR (dbs = ? AND 1=1)
                     LIMIT ?
                 """, (f'%{accession}%', dbs, limit) if accession else (f'%{dbs}%', dbs, limit))
-                results.extend(cursor.fetchall())
+                for row in cursor.fetchall():
+                    results.append(('nuc', row[1], row[3], row[4], row[5] if len(row) > 4 else ''))
                 conn.close()
         else:
             # Search both databases
@@ -225,7 +227,8 @@ class AccessionDBCLI:
                         FROM protein_accessions
                         LIMIT ?
                     """, (limit,))
-                results.extend(cursor.fetchall())
+                for row in cursor.fetchall():
+                    results.append(('protein', row[1], row[2], row[3], row[4]))
                 conn.close()
             
             if os.path.exists(self.nucleotide_db):
@@ -244,7 +247,8 @@ class AccessionDBCLI:
                         FROM nucleotide_accessions
                         LIMIT ?
                     """, (limit,))
-                results.extend(cursor.fetchall())
+                for row in cursor.fetchall():
+                    results.append(('nuc', row[1], row[3], row[4], row[5] if len(row) > 4 else ''))
                 conn.close()
         
         if not results:
