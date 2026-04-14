@@ -1639,42 +1639,43 @@ class setup_dl:
         conn.execute("CREATE INDEX idx_acc ON accessions(acc)")
         conn.execute("CREATE INDEX idx_dbs ON accessions(dbs)")
         
-        for dbs, fl in self.fastas["prot"].items():
-            if dbs in ["refseq_prot"]:
-                continue
-            
-            outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
-            if os.path.isfile(outfile):
-                self.meta[dbs] = outfile
-                logging.info(f"acc2taxid map file {outfile} exists, continuing.")
-                continue
-            
-            if self.test:
-                logging.info(f"acc2taxid map file {outfile} not found.")
-                continue
-            
-            logging.info(f"Creating accession database for {dbs} from {os.path.basename(fl)}")
-            
-            batch = []
-            
-            with gzip.open(fl, "rt") as fn:
-                for line in fn:
-                    if line.startswith(">"):
-                        acc = line.split()[0][1:]
-                        if dbs == "rvdb":
-                            acc = acc.split("|")[2]
-                        batch.append((dbs, acc))
-                        
-                        if len(batch) >= self.batch_size:
-                            conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
-                            conn.commit()
-                            batch = []
-            
-            if batch:
-                conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
-                conn.commit()
-            
-            logging.info(f"Inserted accessions for {dbs}")
+        for dbs, fl_list in self.fastas["prot"].items():
+            for fl in fl_list:
+                if dbs in ["refseq_prot"]:
+                    continue
+                
+                outfile = self.metadir + f"{dbs}_acc2taxid.tsv"
+                if os.path.isfile(outfile):
+                    self.meta[dbs] = outfile
+                    logging.info(f"acc2taxid map file {outfile} exists, continuing.")
+                    continue
+                
+                if self.test:
+                    logging.info(f"acc2taxid map file {outfile} not found.")
+                    continue
+                
+                logging.info(f"Creating accession database for {dbs} from {os.path.basename(fl)}")
+                
+                batch = []
+                
+                with gzip.open(fl, "rt") as fn:
+                    for line in fn:
+                        if line.startswith(">"):
+                            acc = line.split()[0][1:]
+                            if dbs == "rvdb":
+                                acc = acc.split("|")[2]
+                            batch.append((dbs, acc))
+                            
+                            if len(batch) >= self.batch_size:
+                                conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
+                                conn.commit()
+                                batch = []
+                
+                if batch:
+                    conn.executemany("INSERT INTO accessions VALUES (?, ?)", batch)
+                    conn.commit()
+                
+                logging.info(f"Inserted accessions for {dbs}")
         
         conn.close()
         logging.info(f"Accession database created: {db_path}")
