@@ -1354,7 +1354,7 @@ class setup_dl:
             cursor = acc_conn.execute("SELECT acc FROM protein_accessions WHERE dbs = ?", (dbs,))
             acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
         
-        doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
+        doc = os.path.join(acc2tax_dir, f"prot.accession2taxid.FULL.{dci}.gz")
         
         if not os.path.isfile(doc):
             match_conn.close()
@@ -1522,7 +1522,7 @@ class setup_dl:
         :param chunksize: chunck siwe to use in pd.read_csv. very large files.
         :return:
         """
-        doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
+        doc = os.path.join(acc2tax_dir, f"prot.accession2taxid.FULL.{dci}.gz")
         mchunks = {i: [] for i in meta_dict}
         processed = 0
         try:
@@ -1741,9 +1741,9 @@ class setup_dl:
         for dbs in dbs_set:
             cursor = acc_conn.execute("SELECT acc FROM accessions WHERE dbs = ?", (dbs,))
             acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
-        
-        doc = acc2tax_dir + f"prot.accession2taxid.FULL.{dci}.gz"
-        
+
+        doc = os.path.join(acc2tax_dir, f"prot.accession2taxid.FULL.{dci}.gz")
+
         try:
             for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
                                      chunksize=chunksize, names=["acc", "taxid"]):
@@ -2075,9 +2075,14 @@ class setup_dl:
         :param filename: nucl_gb.accession2taxid.gz or nucl_wgs.accession2taxid.gz
         """
         match_db = self.metadir + f"nuc_matches_{filename.replace('.gz','').replace('.','_')}.db"
-        
+
         if os.path.exists(match_db):
-            return
+            conn = sqlite3.connect(match_db)
+            cursor = conn.execute("SELECT COUNT(*) FROM matches")
+            count = cursor.fetchone()[0]
+            conn.close()
+            if count > 0:
+                return
         
         match_conn = sqlite3.connect(match_db)
         match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
@@ -2089,7 +2094,7 @@ class setup_dl:
         for dbs in dbs_set:
             cursor = acc_conn.execute("SELECT acc FROM nucleotide_accessions WHERE dbs = ?", (dbs,))
             acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
-        
+        print("DBS SET:", dbs_set)
         doc = os.path.join(acc2tax_dir, filename)
         
         if not os.path.isfile(doc):
@@ -2103,6 +2108,7 @@ class setup_dl:
                 for dbs in dbs_set:
                     matches = chunk[chunk["accession"].isin(acc_sets[dbs])]
                     if not matches.empty:
+                        print("found matches len: ", len(matches))
                         match_conn.executemany(
                             "INSERT INTO matches VALUES (?, ?, ?)",
                             [(dbs, row["accession"], row["taxid"]) for _, row in matches.iterrows()]
