@@ -1334,7 +1334,7 @@ class setup_dl:
             ).fetchone()[0]
             logging.info(f"{dbs}: {matched}/{total} accessions matched to taxid")
 
-    def _parse_protein_taxids_thread(self, dci: int, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(2e6)):
+    def _parse_protein_taxids_thread(self, dci: int, db_path: str, acc2tax_dir: str, dbs_list: list, chunksize=int(5e5)):
         """
         Thread worker to process NCBI prot.accession2taxid files.
         """
@@ -1510,7 +1510,7 @@ class setup_dl:
         )
 
     def prot2taxid_parse(
-        self, dci: int, meta_dict: dict, acc2tax_dir: str, chunksize: int0 = 8e6
+        self, dci: int, meta_dict: dict, acc2tax_dir: str, chunksize: int0 = 5e5
     ):
         """
         parse prot2taxid files. given dictionary of accession names, merge these with ncbi two column files.
@@ -1625,9 +1625,15 @@ class setup_dl:
         db_path = self.protein_db_path
         
         if os.path.exists(db_path):
-            logging.info(f"Reusing existing accession database: {db_path}")
-            return db_path
-        
+            # check if tables exist
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='accessions'")
+            if cursor.fetchone():
+                logging.info(f"Reusing existing accession database: {db_path}")
+                return db_path
+            conn.close()
+
         conn = sqlite3.connect(db_path)
         conn.execute("CREATE TABLE accessions (dbs TEXT, acc TEXT)")
         conn.execute("CREATE INDEX idx_acc ON accessions(acc)")
@@ -2092,7 +2098,7 @@ class setup_dl:
         
         try:
             for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
-                                     chunksize=chunksize, names=["acc", "taxid"]):
+                                     chunksize=chunksize, names = ['accession', 'accession_version', 'taxid', 'gi']):
                 for dbs in dbs_set:
                     matches = chunk[chunk["acc"].isin(acc_sets[dbs])]
                     if not matches.empty:
