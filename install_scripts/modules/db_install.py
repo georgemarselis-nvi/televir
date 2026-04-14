@@ -1060,6 +1060,7 @@ class setup_dl:
         """
         if use_sqlite:
             self.init_protein_accessions_db()
+            self.prot2taxid_rescue_sqlite()
             self.populate_protein_taxids_sqlite()
             self.generate_main_protacc_to_taxid_sqlite()
         else:
@@ -1616,7 +1617,7 @@ class setup_dl:
 
         return dict_ids
 
-    def temp_nucmeta_sqlite(self):
+    def temp_protmeta_sqlite(self):
         """
         Store accession IDs in SQLite instead of memory to prevent OOM.
         Returns path to SQLite database for later reuse.
@@ -1678,7 +1679,7 @@ class setup_dl:
         Database-backed protein accession to taxid mapping.
         Uses SQLite to avoid OOM issues with large datasets.
         """
-        acc_db = self.temp_nucmeta_sqlite()
+        acc_db = self.temp_protmeta_sqlite()
         
         if not acc_db:
             logging.error("Failed to create accession database")
@@ -1881,107 +1882,6 @@ class setup_dl:
 
         return acc2tax_dir
 
-    def nuc_metadata(self, use_sqlite=True):
-        """
-        merge accession and taxonomy info from nuc fasta files.
-        Uses SQLite for memory-efficient processing and taxid population.
-        """
-        if use_sqlite:
-            self.init_nucleotide_accessions_db()
-            self.populate_nucleotide_taxids_sqlite()
-            self._export_nuc_acc2taxid()
-        else:
-            self._nuc_metadata_original()
-
-    def _nuc_metadata_original(self):
-        """
-        Original nuc_metadata implementation for fallback.
-        """
-        outfile = "acc2taxid.tsv"
-
-        if self.update:
-            if os.path.isfile(self.metadir + outfile):
-                os.remove(self.metadir + outfile)
-
-        if os.path.isfile(self.metadir + outfile):
-            acc2tax = pd.read_csv(self.metadir + outfile, sep="\t")
-            check = []
-            for dbs, fl_list in self.fastas["nuc"].items():
-                for fl in fl_list:
-                    flb = os.path.basename(fl)
-                    if flb not in acc2tax.file.values:
-                        check.append(flb)
-
-            if len(check) == 0:
-                logging.info("acc2taxid.tsv found for all nuc files.")
-                return
-            else:
-                if self.test:
-                    logging.info("acc2taxid.tsv not found for {}".format(check))
-                    return
-                else:
-                    logging.info(
-                        f"acc2taxid.tsv not found for nuc files: {check}. creating.."
-                    )
-                    os.system(f"rm {self.metadir + outfile}")
-        else:
-            if self.test:
-                logging.info("acc2taxid.tsv not found.")
-            else:
-                logging.info("acc2taxid.tsv not found. creating...")
-
-        tax2acc = []
-
-        for dbs, fl_list in self.fastas["nuc"].items():
-            for fl in fl_list:
-                temp_file = self.metadir + dbs + "_temp.tsv"
-
-                ignore_patterns = ""
-                if dbs == "virosaurus":
-                    ignore_patterns = "GENE"
-
-                grep_sequence_identifiers(fl, temp_file, ignore=ignore_patterns)
-
-                if dbs == "kraken2":
-                    dbacc = pd.read_csv(
-                        temp_file, sep="|", names=["suffix", "taxid", "acc"]
-                    )
-                    dbacc["taxid"] = dbacc["taxid"].astype(str)
-                    dbacc["file"] = os.path.basename(fl)
-                    dbacc["acc_in_file"] = dbacc[["suffix", "taxid", "acc"]].agg(
-                        "|".join, axis=1
-                    )
-
-                    dbacc = dbacc[["acc", "taxid", "file", "acc_in_file"]]
-
-                    tax2acc.append(dbacc)
-                    continue
-
-                sed_out_after_dot(temp_file)
-
-                dbacc = pd.read_csv(temp_file, sep="\t", header=None)
-
-                dbacc = dbacc.rename(columns={0: "acc"})
-                dbacc["file"] = os.path.basename(fl)
-
-                if dbs == "virosaurus":
-
-                    def viro_acc(x):
-                        acc = x.split(".")[0]
-                        return f"{acc}:{acc};"
-
-                    dbacc["acc_in_file"] = dbacc.acc.apply(viro_acc)
-
-                else:
-                    dbacc["acc_in_file"] = dbacc.acc
-
-                tax2acc.append(dbacc)
-
-                os.system(f"rm {temp_file}")
-
-        tax2acc = pd.concat(tax2acc)
-
-        tax2acc.to_csv(self.metadir + outfile, sep="\t", index=False)
 
     def init_nucleotide_accessions_db(self):
         """
