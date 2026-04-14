@@ -2101,11 +2101,11 @@ class setup_dl:
             for chunk in pd.read_csv(doc, compression="gzip", sep="\t", 
                                      chunksize=chunksize, names = ['accession', 'accession_version', 'taxid', 'gi']):
                 for dbs in dbs_set:
-                    matches = chunk[chunk["acc"].isin(acc_sets[dbs])]
+                    matches = chunk[chunk["accession"].isin(acc_sets[dbs])]
                     if not matches.empty:
                         match_conn.executemany(
                             "INSERT INTO matches VALUES (?, ?, ?)",
-                            [(dbs, row["acc"], row["taxid"]) for _, row in matches.iterrows()]
+                            [(dbs, row["accession"], row["taxid"]) for _, row in matches.iterrows()]
                         )
         except Exception as e:
             logging.error(f"Error processing {doc}: {e}")
