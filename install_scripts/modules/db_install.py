@@ -1726,9 +1726,9 @@ class setup_dl:
         
         match_conn = sqlite3.connect(match_db)
         match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
-        
-        acc_conn = sqlite3.connect(acc_db, readonly=True)
-        
+
+        acc_conn = sqlite3.connect(acc_db)
+
         dbs_set = set(dbs_list)
         acc_sets = {}
         for dbs in dbs_set:
@@ -2075,7 +2075,7 @@ class setup_dl:
         match_conn = sqlite3.connect(match_db)
         match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
         
-        acc_conn = sqlite3.connect(db_path, readonly=True)
+        acc_conn = sqlite3.connect(db_path)
         
         dbs_set = set(dbs_list)
         acc_sets = {}
