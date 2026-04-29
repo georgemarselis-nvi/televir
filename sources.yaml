@@ -161,7 +161,6 @@ databases:
   prebuilt_indices:
     centrifuge:
       fungi_curated:
-        path: "prebuilt/centrifuge/fungi_curated"
         description: "Curated Fungi Centrifuge index (user-provided)"
 
   # ---------------------------------------------------------------------------

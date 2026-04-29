@@ -796,7 +796,7 @@ class main_setup:
 
         ########################## kraken2 (pre-built custom) ###############################
         # Install custom pre-built indices from PREBUILT_KRAKEN2_INDICES list
-        for dbname in self.layout.PREBUILT_KRAKEN2_INDICES:
+        for dbname in get_prebuilt_indices_tool("kraken2"):
             prebuilt_path = get_prebuilt_index_path("kraken2", dbname)
             if prebuilt_path:
                 success_install = sofprep.kraken2_register_prebuilt(dbname=dbname)

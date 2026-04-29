@@ -2348,20 +2348,16 @@ class setup_install(setup_dl):
         Returns:
             True if prebuilt index found and registered, False otherwise
         """
-        local_path = os.path.join("/opt/data/prebuilt/", "centrifuge", dbname)
+        prebuilt_path = os.path.join("/opt/data/prebuilt/", "centrifuge", dbname)
         odir = self.dbdir + dbname + "/"
-        sdir = odir + dbname + "/" + dbname
         index_file_prefix = f"{odir}{dbname}/{dbname}_index"
 
 
-        sys.path.insert(0, os.path.dirname(__file__))
-        from load_sources import get_prebuilt_index_path
+        #sys.path.insert(0, os.path.dirname(__file__))
+        #from load_sources import get_prebuilt_index_path
 
         if os.path.isfile(index_file_prefix + ".1.cf"):
             logging.info(f"Centrifuge db {dbname} index is installed.")
-            centrifuge_fasta = f"{sdir}/complete.fna.gz"
-            if os.path.isfile(os.path.splitext(centrifuge_fasta)[0]):
-                os.system(f"bgzip {sdir}/complete.fna")
 
             self.dbs[id] = {
                 "dir": odir,
@@ -2371,27 +2367,29 @@ class setup_install(setup_dl):
             }
             return True
 
-        prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
+        #prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
         if not prebuilt_path:
             logging.info(f"No prebuilt path configured for centrifuge/{dbname}")
             return False
 
-        if not os.path.exists(local_path):
-            logging.info(f"Prebuilt centrifuge/{dbname} not found at {local_path}")
-            return False
-
-        index_files = [f for f in os.listdir(local_path) if f.endswith(".cf")]
+        index_files = [f for f in os.listdir(prebuilt_path) if f.endswith(".cf")]
         print("Found prebuilt centrifuge index files:", index_files)
         if len(index_files) < 2:
-            logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {local_path}")
+            logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {prebuilt_path}")
             return False
 
-        logging.info(f"Found prebuilt centrifuge/{dbname} at {local_path}")
+        dest_files = [f"{index_file_prefix}.{i+1}.cf" for i in range(len(index_files))]
+        dest_files_exist = [os.path.exists(f) for f in dest_files]
+        if all(dest_files_exist):
+            logging.info(f"Found prebuilt centrifuge/{dbname} at {prebuilt_path}")
+            if self.update:
+                logging.info(f"Updating centrifuge/{dbname} index from {prebuilt_path}")
+                shutil.rmtree(f"{odir}{dbname}", ignore_errors=True)
 
-        index_file_prefix = f"{local_path}/{dbname}_index"
+        os.makedirs(odir + dbname, exist_ok=True)
         index_files = sorted(index_files)
         for i in range(len(index_files)):
-            src = os.path.join(local_path, index_files[i])
+            src = os.path.join(prebuilt_path, index_files[i])
             dst = f"{index_file_prefix}.{i+1}.cf"
             if not os.path.isfile(dst):
                 shutil.move(src, dst)
@@ -2414,14 +2412,14 @@ class setup_install(setup_dl):
         Returns:
             True if prebuilt index found and registered, False otherwise
         """
+        prebuilt_path = os.path.join("/opt/data/prebuilt/", "kraken2", dbname)
+        odir = self.dbdir + "kraken2/"
+
         import sys
         sys.path.insert(0, os.path.dirname(__file__))
         from load_sources import get_prebuilt_index_path
 
-        prebuilt_path = get_prebuilt_index_path("kraken2", dbname)
-        if not prebuilt_path:
-            logging.info(f"No prebuilt path configured for kraken2/{dbname}")
-            return False
+        #prebuilt_path = get_prebuilt_index_path("kraken2", dbname)
 
         if not os.path.exists(prebuilt_path):
             logging.info(f"Prebuilt kraken2/{dbname} not found at {prebuilt_path}")
@@ -2431,7 +2429,16 @@ class setup_install(setup_dl):
             logging.info(f"Prebuilt kraken2/{dbname} index file (taxo.k2d) not found at {prebuilt_path}")
             return False
 
+        if os.path.exists(prebuilt_path + "/taxo.k2d"):
+            logging.info(f"Prebuilt kraken2/{dbname} index file (taxo.k2d) found at {prebuilt_path}")
+            if self.update:
+                logging.info(f"Updating kraken2/{dbname} index from {prebuilt_path}")
+                shutil.rmtree(os.path.join(odir, dbname), ignore_errors=True)
+            else:
+                return True
+
         logging.info(f"Found prebuilt kraken2/{dbname} at {prebuilt_path}")
+        shutil.copytree(prebuilt_path, os.path.join(odir, dbname), dirs_exist_ok=True)
 
         self.dbs["kraken2"] = {
             "dir": prebuilt_path + "/",
