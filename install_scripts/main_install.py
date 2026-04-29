@@ -576,12 +576,8 @@ class main_setup:
         # Install custom pre-built indices from PREBUILT_CENTRIFUGE_INDICES list
         
         for dbname in get_prebuilt_indices_tool("centrifuge"):
-            prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
-            if prebuilt_path:
-                install_success = sofprep.centrifuge_register_prebuilt(dbname=dbname)
-            else:
-                logging.info(f"No prebuilt path configured for centrifuge/{dbname}, skipping installation")
-                install_success = False
+
+            install_success = sofprep.centrifuge_register_prebuilt(dbname=dbname)
 
             if not install_success:
                 logging.info(f"Centrifuge/{dbname} not installed (prebuilt not found)")
