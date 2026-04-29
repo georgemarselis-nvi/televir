@@ -346,6 +346,14 @@ class SourceLoader:
             Path string or None if not configured
         """
         return self.get('databases', 'prebuilt_indices', tool, dbname, 'path')
+
+    def get_prebuilt_indices_tool(self, tool: str) -> list:
+        """Get all prebuilt indices for a specific tool."""
+        return self.get('databases', 'prebuilt_indices', tool, default = [])
+
+    def get_prebuilt_indices(self) -> Optional[list]:
+        """Get all prebuilt indices configured in sources.yaml."""
+        return self.get('databases', 'prebuilt_indices')
     
     def extract_version_from_string(self, s: str) -> Optional[str]:
         """Extract version from filename or URL string (case-insensitive).
@@ -567,6 +575,10 @@ def get_refseq_entry(organism: str, db_type: str) -> Optional[Dict]:
     """
     return get_loader().get_refseq_entry(organism, db_type)
 
+def get_prebuilt_indices() -> Optional[list]:
+    """Get all prebuilt indices configured in sources.yaml."""
+    return get_loader().get_prebuilt_indices()
+
 def get_prebuilt_index_path(tool: str, dbname: str) -> Optional[str]:
     """Get prebuilt index path from sources.yaml.
     
@@ -578,6 +590,10 @@ def get_prebuilt_index_path(tool: str, dbname: str) -> Optional[str]:
         Path string or None if not configured
     """
     return get_loader().get_prebuilt_index_path(tool, dbname)
+
+def get_prebuilt_indices_tool(tool: str) -> list:
+    """Get all prebuilt indices for a specific tool."""
+    return get_loader().get_prebuilt_indices_tool(tool)
 
 def extract_version_from_string(s: str) -> Optional[str]:
     """Extract version from filename or URL string (case-insensitive)."""

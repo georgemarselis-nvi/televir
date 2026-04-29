@@ -15,6 +15,8 @@ from install_scripts.load_sources import (
     get_db_entry,
     get_refseq_entry,
     get_prebuilt_index_path,
+    get_prebuilt_indices_tool,
+    get_prebuilt_indices,
     is_db_enabled,
     get_install_types,
     get_db_key,
@@ -572,7 +574,8 @@ class main_setup:
 
         ######################### centrifuge (pre-built custom) ###############################
         # Install custom pre-built indices from PREBUILT_CENTRIFUGE_INDICES list
-        for dbname in self.layout.PREBUILT_CENTRIFUGE_INDICES:
+        
+        for dbname in get_prebuilt_indices_tool("centrifuge"):
             prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
             if prebuilt_path:
                 install_success = sofprep.centrifuge_register_prebuilt(dbname=dbname)

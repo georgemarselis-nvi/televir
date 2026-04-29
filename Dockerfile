@@ -70,8 +70,8 @@ RUN if [ -n "$REQUEST_SEQ_FILE" ] && [ -f "$REQUEST_SEQ_FILE" ]; then \
     cp $REQUEST_SEQ_FILE /opt/request_sequences.fa.gz; \
     fi
 
-COPY televir.env /opt/televir/televir.env
-COPY prebuilt/ /opt/televir/prebuilt/
+COPY televir.env /opt/data/televir.env
+ADD prebuilt/ /opt/data/prebuilt/
 
 WORKDIR /
 COPY entrypoint.sh entrypoint_original.sh

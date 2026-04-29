@@ -2348,7 +2348,7 @@ class setup_install(setup_dl):
         Returns:
             True if prebuilt index found and registered, False otherwise
         """
-
+        local_path = os.path.join("/opt/data/prebuilt/", "centrifuge", dbname)
         odir = self.dbdir + dbname + "/"
         sdir = odir + dbname + "/" + dbname
         index_file_prefix = f"{odir}{dbname}/{dbname}_index"
@@ -2376,22 +2376,22 @@ class setup_install(setup_dl):
             logging.info(f"No prebuilt path configured for centrifuge/{dbname}")
             return False
 
-        if not os.path.exists(prebuilt_path):
-            logging.info(f"Prebuilt centrifuge/{dbname} not found at {prebuilt_path}")
+        if not os.path.exists(local_path):
+            logging.info(f"Prebuilt centrifuge/{dbname} not found at {local_path}")
             return False
 
-        index_files = [f for f in os.listdir(prebuilt_path) if f.endswith(".cf")]
+        index_files = [f for f in os.listdir(local_path) if f.endswith(".cf")]
         print("Found prebuilt centrifuge index files:", index_files)
         if len(index_files) < 2:
-            logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {prebuilt_path}")
+            logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {local_path}")
             return False
 
-        logging.info(f"Found prebuilt centrifuge/{dbname} at {prebuilt_path}")
+        logging.info(f"Found prebuilt centrifuge/{dbname} at {local_path}")
 
-        index_file_prefix = f"{prebuilt_path}/{dbname}_index"
+        index_file_prefix = f"{local_path}/{dbname}_index"
         index_files = sorted(index_files)
         for i in range(len(index_files)):
-            src = os.path.join(prebuilt_path, index_files[i])
+            src = os.path.join(local_path, index_files[i])
             dst = f"{index_file_prefix}.{i+1}.cf"
             if not os.path.isfile(dst):
                 shutil.move(src, dst)

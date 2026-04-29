@@ -3,8 +3,8 @@
 set -e
 
 # Load environment variables from image
-if [ -f "/opt/televir/televir.env" ]; then
-    source /opt/televir/televir.env
+if [ -f "/opt/data/televir.env" ]; then
+    source /opt/data/televir.env
 fi
 
 # Allow override from environment
