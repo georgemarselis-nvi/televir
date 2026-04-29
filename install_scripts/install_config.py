@@ -8,7 +8,7 @@ class TelevirLayout:
     HOSTS_TO_INSTALL = [
         "hg38",
         "sus_scrofa",
-        "aedes_albopictus",
+        #"aedes_albopictus",
         #"gallus_gallus",
         #"oncorhynchus_mykiss",
         #"salmo_salar",
@@ -49,7 +49,7 @@ class TelevirLayout:
     # Example:
     # PREBUILT_CENTRIFUGE_INDICES = ["my_custom", "another_index"]
     # PREBUILT_KRAKEN2_INDICES = ["my_custom", "custom_kraken"]
-    PREBUILT_CENTRIFUGE_INDICES = []
+    PREBUILT_CENTRIFUGE_INDICES = ["fungi_curated"]
     PREBUILT_KRAKEN2_INDICES = []
     
     # check files

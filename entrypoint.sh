@@ -71,6 +71,12 @@ setup_config() {
         mkdir -p "$INSTALL_HOME/tools"
         cp /opt/televir-repo/install_scripts/accession_db_cli.py "$INSTALL_HOME/tools/"
     fi
+    
+    # Copy install_config.py for user modification
+    if [ -f "/opt/televir-repo/install_scripts/install_config.py" ]; then
+        mkdir -p "$INSTALL_HOME/tools"
+        cp /opt/televir-repo/install_scripts/install_config.py "$INSTALL_HOME/tools/"
+    fi
 }
 
 # Function to set permissions
