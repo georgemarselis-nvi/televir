@@ -2368,7 +2368,8 @@ class setup_install(setup_dl):
             return True
 
         #prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
-        if not prebuilt_path:
+        print(prebuilt_path)
+        if prebuilt_path is None or os.path.exists(prebuilt_path) == False:
             logging.info(f"No prebuilt path configured for centrifuge/{dbname}: {prebuilt_path}")
             return False
 
