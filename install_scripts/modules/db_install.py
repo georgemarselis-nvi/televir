@@ -2352,10 +2352,9 @@ class setup_install(setup_dl):
         odir = self.dbdir + dbname + "/"
         index_file_prefix = f"{odir}{dbname}/{dbname}_index"
 
-
         #sys.path.insert(0, os.path.dirname(__file__))
         #from load_sources import get_prebuilt_index_path
-
+        logging.info(f"############# PREBUILT {prebuilt_path}")
         if os.path.isfile(index_file_prefix + ".1.cf"):
             logging.info(f"Centrifuge db {dbname} index is installed.")
 
