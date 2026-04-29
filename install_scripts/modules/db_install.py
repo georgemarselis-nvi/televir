@@ -2339,7 +2339,7 @@ class setup_install(setup_dl):
             }
             return False
 
-    def centrifuge_register_prebuilt(self, dbname):
+    def centrifuge_register_prebuilt(self, dbname, id = "centrifuge"):
         """Register a pre-built Centrifuge index.
 
         Args:
