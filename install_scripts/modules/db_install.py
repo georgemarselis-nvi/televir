@@ -2368,13 +2368,13 @@ class setup_install(setup_dl):
             return True
 
         #prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
-        print("############# PREBUILT", prebuilt_path)
+        logging.info("############# PREBUILT", prebuilt_path)
         if prebuilt_path is None or os.path.exists(prebuilt_path) == False:
             logging.info(f"No prebuilt path configured for centrifuge/{dbname}: {prebuilt_path}")
             return False
 
         index_files = [f for f in os.listdir(prebuilt_path) if f.endswith(".cf")]
-        print("Found prebuilt centrifuge index files:", index_files)
+        logging.info(f"Found prebuilt centrifuge index files: {index_files}")
         if len(index_files) < 2:
             logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {prebuilt_path}")
             return False
