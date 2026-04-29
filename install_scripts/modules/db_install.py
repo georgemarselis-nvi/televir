@@ -11,7 +11,7 @@ from ftplib import FTP
 from pathlib import Path
 from random import randint
 from threading import Thread
-
+import sys
 import pandas as pd
 from install_scripts.host_library import Host
 from install_scripts.load_sources import get_db_url, get_db_version
@@ -2348,9 +2348,28 @@ class setup_install(setup_dl):
         Returns:
             True if prebuilt index found and registered, False otherwise
         """
-        import sys
+
+        odir = self.dbdir + dbname + "/"
+        sdir = odir + dbname + "/" + dbname
+        index_file_prefix = f"{odir}{dbname}/{dbname}_index"
+
+
         sys.path.insert(0, os.path.dirname(__file__))
         from load_sources import get_prebuilt_index_path
+
+        if os.path.isfile(index_file_prefix + ".1.cf"):
+            logging.info(f"Centrifuge db {dbname} index is installed.")
+            centrifuge_fasta = f"{sdir}/complete.fna.gz"
+            if os.path.isfile(os.path.splitext(centrifuge_fasta)[0]):
+                os.system(f"bgzip {sdir}/complete.fna")
+
+            self.dbs[id] = {
+                "dir": odir,
+                "dbname": dbname,
+                "db": index_file_prefix,
+                "status": "success",
+            }
+            return True
 
         prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
         if not prebuilt_path:
@@ -2361,12 +2380,21 @@ class setup_install(setup_dl):
             logging.info(f"Prebuilt centrifuge/{dbname} not found at {prebuilt_path}")
             return False
 
-        index_file_prefix = f"{prebuilt_path}/{dbname}_index"
-        if not os.path.isfile(index_file_prefix + ".1.cf"):
+        index_files = [f for f in os.listdir(prebuilt_path) if f.endswith(".cf")]
+
+        if len(index_files) < 2:
             logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {prebuilt_path}")
             return False
 
         logging.info(f"Found prebuilt centrifuge/{dbname} at {prebuilt_path}")
+
+        index_file_prefix = f"{prebuilt_path}/{dbname}_index"
+        index_files = sorted(index_files)
+        for i in range(len(index_files)):
+            src = os.path.join(prebuilt_path, index_files[i])
+            dst = f"{index_file_prefix}.{i+1}.cf"
+            if not os.path.isfile(dst):
+                shutil.move(src, dst)
 
         self.dbs["centrifuge"] = {
             "dir": prebuilt_path + "/",
