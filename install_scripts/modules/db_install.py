@@ -2094,7 +2094,7 @@ class setup_dl:
         for dbs in dbs_set:
             cursor = acc_conn.execute("SELECT acc FROM nucleotide_accessions WHERE dbs = ?", (dbs,))
             acc_sets[dbs] = set(row[0] for row in cursor.fetchall())
-        print("DBS SET:", dbs_set)
+
         doc = os.path.join(acc2tax_dir, filename)
         
         if not os.path.isfile(doc):
@@ -2381,7 +2381,7 @@ class setup_install(setup_dl):
             return False
 
         index_files = [f for f in os.listdir(prebuilt_path) if f.endswith(".cf")]
-
+        print("Found prebuilt centrifuge index files:", index_files)
         if len(index_files) < 2:
             logging.info(f"Prebuilt centrifuge/{dbname} index files not found at {prebuilt_path}")
             return False
