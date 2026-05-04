@@ -2356,16 +2356,6 @@ class setup_install(setup_dl):
         #from load_sources import get_prebuilt_index_path
         logging.info(f"############# PREBUILT NEW {index_file_prefix}")
         print(os.path.isfile(index_file_prefix + ".1.cf"))
-        if os.path.isfile(index_file_prefix + ".1.cf"):
-            logging.info(f"Centrifuge db {dbname} index is installed.")
-
-            self.dbs[id] = {
-                "dir": odir,
-                "dbname": dbname,
-                "db": index_file_prefix,
-                "status": "success",
-            }
-            return True
 
         #prebuilt_path = get_prebuilt_index_path("centrifuge", dbname)
         logging.info(f"############# PREBUILT {prebuilt_path}")
@@ -2386,6 +2376,16 @@ class setup_install(setup_dl):
             if self.update:
                 logging.info(f"Updating centrifuge/{dbname} index from {prebuilt_path}")
                 shutil.rmtree(f"{odir}{dbname}", ignore_errors=True)
+            else:
+
+                self.dbs[id] = {
+                    "dir": odir,
+                    "dbname": dbname,
+                    "db": index_file_prefix,
+                    "status": "success",
+                }
+                return True
+
 
         os.makedirs(odir + dbname, exist_ok=True)
         index_files = sorted(index_files)
@@ -2404,7 +2404,7 @@ class setup_install(setup_dl):
         }
         return True
 
-    def kraken2_register_prebuilt(self, dbname="viral"):
+    def kraken2_register_prebuilt(self, dbname="viral", id="kraken2"):
         """Register a pre-built Kraken2 index.
 
         Args:
@@ -2436,6 +2436,14 @@ class setup_install(setup_dl):
                 logging.info(f"Updating kraken2/{dbname} index from {prebuilt_path}")
                 shutil.rmtree(os.path.join(odir, dbname), ignore_errors=True)
             else:
+                self.dbs[id] = {
+                    "dir": prebuilt_path + "/",
+                    "dbname": dbname,
+                    "db": prebuilt_path,
+                    "version": "prebuilt",
+                    "source_url": "user-provided",
+                    "status": "success",
+                }
                 return True
 
         logging.info(f"Found prebuilt kraken2/{dbname} at {prebuilt_path}")
@@ -2444,7 +2452,6 @@ class setup_install(setup_dl):
         self.dbs["kraken2"] = {
             "dir": prebuilt_path + "/",
             "dbname": dbname,
-            "fasta": prebuilt_path + "/library/" + dbname + "/library.fna.gz",
             "db": prebuilt_path,
             "version": "prebuilt",
             "source_url": "user-provided",

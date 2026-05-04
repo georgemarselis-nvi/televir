@@ -93,22 +93,16 @@ databases:
   # ---------------------------------------------------------------------------
   kraken2:
     viral:
-      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20250402.tar.gz"
+      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20260226.tar.gz"
       description: "Kraken2 pre-built viral database"
-      file: "k2_viral_20250402.tar.gz"
-      version: "20250402"
+      file: "k2_viral_20260226.tar.gz"
+      version: "20260226"
 
     standard:
-      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20250402.tar.gz"
+      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20260226.tar.gz"
       description: "Kraken2 pre-built standard database"
-      file: "k2_standard_20250402.tar.gz"
-      version: "20250402"
-
-    bacteria:
-      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_16gb_20230314.tar.gz"
-      description: "Kraken2 reduced standard database (16GB)"
-      file: "k2_standard_16gb_20230314.tar.gz"
-      version: "20230314"
+      file: "k2_standard_20260226.tar.gz"
+      version: "20260226"
 
     ribo16s:
       url: "https://genome-idx.s3.amazonaws.com/kraken/16S_RDP11.5_20200326.tgz"
@@ -117,10 +111,16 @@ databases:
       version: "20200326"
 
     eupathdb46:
-      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_eupathdb48_20201113.tar.gz"
+      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_eupathdb48_20230407.tar.gz"
       description: "Kraken2 eukaryotic pathogen database"
-      file: "k2_eupathdb48_20201113.tar.gz"
-      version: "20201113"
+      file: "k2_eupathdb48_20230407.tar.gz"
+      version: "20230407"
+
+    pluspfp16:
+      url: "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260226.tar.gz"
+      description: "Kraken2 PlusPF 16GB database"
+      file: "k2_pluspf_16_GB_20260226.tar.gz"
+      version: "20260226"
 
   # ---------------------------------------------------------------------------
   # Centrifuge Databases
