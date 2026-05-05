@@ -32,9 +32,9 @@ class TelevirLayout:
     install_metaphlan = False
     install_voyager_viral = False
     install_centrifuge = True
-    install_centrifuge_bacteria = False
+    install_centrifuge_bacteria = True
     install_kraken2 = True
-    install_kraken2_bacteria = False
+    install_kraken2_bacteria = True
     install_kraken2_eupathdb46 = False
     install_krakenuniq = True
     install_kaiju = True
