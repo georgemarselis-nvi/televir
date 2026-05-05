@@ -97,30 +97,35 @@ databases:
       description: "Kraken2 pre-built viral database"
       file: "k2_viral_20260226.tar.gz"
       version: "20260226"
+      install: true
 
     standard:
       url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_20260226.tar.gz"
       description: "Kraken2 pre-built standard database"
       file: "k2_standard_20260226.tar.gz"
       version: "20260226"
+      install: true
 
     ribo16s:
       url: "https://genome-idx.s3.amazonaws.com/kraken/16S_RDP11.5_20200326.tgz"
       description: "Kraken2 RDP 16S rRNA database"
       file: "16S_RDP11.5_20200326.tgz"
       version: "20200326"
+      install: false
 
     eupathdb46:
       url: "https://genome-idx.s3.amazonaws.com/kraken/k2_eupathdb48_20230407.tar.gz"
       description: "Kraken2 eukaryotic pathogen database"
       file: "k2_eupathdb48_20230407.tar.gz"
       version: "20230407"
+      install: false
 
     pluspfp16:
       url: "https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260226.tar.gz"
       description: "Kraken2 PlusPF 16GB database"
       file: "k2_pluspf_16_GB_20260226.tar.gz"
       version: "20260226"
+      install: false
 
   # ---------------------------------------------------------------------------
   # Centrifuge Databases
@@ -131,12 +136,14 @@ databases:
       description: "Centrifuge pre-built viral database"
       file: "p_compressed_2018_4_15.tar.gz"
       version: "2018_4_15"
+      install: true
 
     bacteria:
       url: "https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed_2018_4_15.tar.gz"
       description: "Centrifuge pre-built bacteria database"
       file: "p_compressed_2018_4_15.tar.gz"
       version: "2018_4_15"
+      install: true
 
   # ---------------------------------------------------------------------------
   # Pre-built Indices (user-provided)

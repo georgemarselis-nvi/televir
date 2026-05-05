@@ -29,13 +29,11 @@ class TelevirLayout:
     install_bwa_host = True
 
     # classification software.
+    # NOTE: centrifuge and kraken2 installations are now controlled
+    # by the 'install' field in sources.yaml under databases.centrifuge
+    # and databases.kraken2 sections.
     install_metaphlan = False
     install_voyager_viral = False
-    install_centrifuge = True
-    install_centrifuge_bacteria = True
-    install_kraken2 = True
-    install_kraken2_bacteria = True
-    install_kraken2_eupathdb46 = False
     install_krakenuniq = True
     install_kaiju = True
     install_diamond = True
@@ -58,6 +56,8 @@ class TelevirLayout:
     # Database name mapping: install flag -> (category, yaml_name)
     # Used to register databases with names matching sources.yaml
     # Note: refseq_prot and refseq_gen are dynamically generated, not in sources.yaml
+    # NOTE: centrifuge and kraken2 entries are now handled by looping over
+    # sources.yaml databases with install: true
     DATABASE_NAMES = {
         # Reference databases
         # RefSeq viral
@@ -76,21 +76,15 @@ class TelevirLayout:
         "install_request_sequences": ("taxonomy", "requests"),
         
         # Classification indices as databases (also saved as software)
-        "install_kraken2": ("kraken2", "viral"),
-        "install_kraken2_bacteria": ("kraken2", "bacteria"),
-        "install_kraken2_eupathdb46": ("kraken2", "eupathdb46"),
-        "install_centrifuge": ("centrifuge", "viral"),
-        "install_centrifuge_bacteria": ("centrifuge", "bacteria"),
         "install_kaiju": ("kaiju", "viral"),
     }
 
     # Software name mapping: install flag -> (software_name, tag)
     # software_name: the tool name (e.g., kraken2, centrifuge)
     # tag: specific database variant (e.g., viral, bacteria, default)
+    # NOTE: centrifuge and kraken2 entries are now handled by looping over
+    # sources.yaml databases with install: true
     SOFTWARE_NAMES = {
-        "install_kraken2": ("kraken2", "viral"),
-        "install_kraken2_eupathdb46": ("kraken2", "eupathdb46"),
-        "install_centrifuge": ("centrifuge", "viral"),
         "install_metaphlan": ("metaphlan", "default"),
         "install_kaiju": ("kaiju", "viral"),
         "install_krakenuniq": ("krakenuniq", "default"),

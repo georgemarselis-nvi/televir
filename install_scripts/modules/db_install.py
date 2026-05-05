@@ -2275,7 +2275,6 @@ class setup_install(setup_dl):
             self.dbs[id] = {
                 "dir": odir,
                 "dbname": dbname,
-                "fasta": f"{sdir}/complete.fna.gz",
                 "db": index_file_prefix,
                 "status": "success",
             }
@@ -2296,11 +2295,11 @@ class setup_install(setup_dl):
                 logging.info(f"Centrifuge db {dbname} is not installed. Installing...")
 
         try:
-
+            filename = os.path.basename(href)
             os.makedirs(sdir, exist_ok=True)
             os.system(f"wget -P {sdir} {href}")
-            os.system(f"tar -xvzf {sdir}/p_compressed_2018_4_15.tar.gz -C {sdir}")
-            os.system(f"rm {sdir}/p_compressed_2018_4_15.tar.gz")
+            os.system(f" tar -xvzf {sdir}/{filename} -C {sdir}")
+            os.system(f"rm {sdir}/{filename}")
 
             files_in_directory = os.listdir(sdir)
             index_files = [f for f in files_in_directory if f.endswith(".cf")]
@@ -2313,7 +2312,6 @@ class setup_install(setup_dl):
                 self.dbs[id] = {
                     "dir": odir,
                     "dbname": dbname,
-                    "fasta": "",
                     "db": index_file_prefix,
                     "status": "success",
                 }
