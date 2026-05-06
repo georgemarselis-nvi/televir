@@ -14,16 +14,6 @@ SOURCE=${SOURCE:-/opt/conda/etc/profile.d/conda.sh}
 TAXDUMP=${TAXDUMP:-/opt/taxdump.tar.gz}
 UPDATE=${UPDATE:-false}
 
-# Request sequences file - check multiple locations (priority: env > build arg > volume)
-REQUEST_SEQ_FILE=""
-if [ -n "${REQUEST_SEQ_FILE}" ]; then
-    : # Use provided value
-    elif [ -f "/opt/request_sequences.fa.gz" ]; then
-    REQUEST_SEQ_FILE="/opt/request_sequences.fa.gz"
-    elif [ -f "/data/request_sequences.fa.gz" ]; then
-    REQUEST_SEQ_FILE="/data/request_sequences.fa.gz"
-fi
-
 # Function to ensure directories exist
 ensure_directories() {
     mkdir -p "$INSTALL_HOME"
@@ -31,15 +21,6 @@ ensure_directories() {
     mkdir -p "$INSTALL_HOME/ref_db"
     mkdir -p "$INSTALL_HOME/ref_fasta"
     mkdir -p "$INSTALL_HOME/metadata"
-}
-
-# Function to copy request sequences if available
-copy_request_sequences() {
-    if [ -n "$REQUEST_SEQ_FILE" ] && [ -f "$REQUEST_SEQ_FILE" ]; then
-        echo "---> Copying request sequences: $REQUEST_SEQ_FILE"
-        mkdir -p "$INSTALL_HOME/ref_fasta"
-        cp "$REQUEST_SEQ_FILE" "$INSTALL_HOME/ref_fasta/request_references.fa.gz"
-    fi
 }
 
 # Function to setup config in target directory
@@ -97,7 +78,6 @@ run_install() {
     ensure_directories
     
     setup_config
-    copy_request_sequences
     
     # Run installation from repo, but install data to /opt/televir
     cd /opt/televir-repo
@@ -123,8 +103,6 @@ run_update() {
     
     UPDATE=true
     cd /opt/televir-repo
-    
-    copy_request_sequences
     
     /opt/venv/bin/python main.py \
     --docker \

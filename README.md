@@ -315,27 +315,21 @@ docker run -v /data:/opt/televir televir status
 
 ## Request Sequences
 
-You can provide custom request sequences in three ways, checked in this priority order:
+You can provide custom request sequences by configuring them in `sources.yaml`. Multiple files are supported.
 
-### 1. Environment Variable (highest priority)
+### Configuration in `sources.yaml`
 
-```bash
-docker run -e REQUEST_SEQ_FILE=/data/request_sequences.fa.gz -v /data:/opt/televir televir move
+Edit `sources.yaml` and configure the `request_sequences` section:
+
+```yaml
+request_sequences:
+  - path: "/path/to/sequences.fa.gz"
+    description: "My custom sequences"
+  # - path: "/path/to/more_sequences.fa.gz"
+  #   description: "More sequences"
 ```
 
-### 2. Build-Time (via `--build-arg`)
-
-```bash
-docker build --build-arg REQUEST_SEQ_FILE=/path/to/sequences.fa.gz -t televir .
-```
-
-### 3. Runtime Volume Mount
-
-```bash
-docker run -v /path/to/sequences.fa.gz:/data/request_sequences.fa.gz -v /data:/opt/televir televir move
-```
-
-**Priority order:** Environment variable → `/opt/request_sequences.fa.gz` (built-in) → `/data/request_sequences.fa.gz` (mounted)
+Each entry must have a `path` key pointing to the sequence file (`.fa`, `.fasta`, `.fna`, or `.gz`). Files will be copied to the `ref_fasta` directory and registered in the `fastas["nuc"]` dictionary with keys like `requests_<basename>`.
 
 ---
 

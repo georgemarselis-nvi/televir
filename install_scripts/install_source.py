@@ -10,7 +10,7 @@ For new code, prefer importing directly from load_sources:
 """
 
 import os
-from install_scripts.load_sources import get_loader, get_software_url, get_git_url, list_software
+from install_scripts.load_sources import get_loader, get_software_url, get_git_url, list_software, get_request_sequences
 
 def get_env_var(key, default=""):
     """Get environment variable with fallback to default"""
@@ -21,7 +21,6 @@ INSTALL_HOME = get_env_var("INSTALL_HOME", "/opt/televir")
 ENVDIR = get_env_var("ENVDIR", "/opt/televir/environments")
 SOURCE = get_env_var("SOURCE", "/opt/conda/etc/profile.d/conda.sh")
 TAXDUMP = get_env_var("TAXDUMP", "/opt/taxdump.tar.gz")
-REQUEST_SEQ_FILE = get_env_var("REQUEST_SEQ_FILE", "")
 INSTALL_UPDATE = get_env_var("UPDATE", "false").lower() == "true"
 
 
@@ -103,7 +102,7 @@ INSTALL_PARAMS = {
     "BINDIR": {"deSAMBA": "classm_lc/deSAMBA"},
     "REQUEST_REFERENCES": {
         "ACCID": "",
-        "FILE": REQUEST_SEQ_FILE,
+        "FILES": get_request_sequences(),
     },
 }
 

@@ -354,6 +354,14 @@ class SourceLoader:
     def get_prebuilt_indices(self) -> Optional[list]:
         """Get all prebuilt indices configured in sources.yaml."""
         return self.get('databases', 'prebuilt_indices')
+
+    def get_request_sequences(self) -> list:
+        """Get request sequences list from sources.yaml.
+        
+        Returns:
+            List of {path, description} dicts, or empty list if not configured
+        """
+        return self.get('request_sequences', default=[])
     
     def extract_version_from_string(self, s: str) -> Optional[str]:
         """Extract version from filename or URL string (case-insensitive).
@@ -593,7 +601,15 @@ def get_prebuilt_index_path(tool: str, dbname: str) -> Optional[str]:
 
 def get_prebuilt_indices_tool(tool: str) -> list:
     """Get all prebuilt indices for a specific tool."""
-    return get_loader().get_prebuilt_indices_tool(tool)
+    return get_loader().get_prebuilt_indices_tool()
+
+def get_request_sequences() -> list:
+    """Get request sequences list from sources.yaml.
+    
+    Returns:
+        List of {path, description} dicts, or empty list if not configured
+    """
+    return get_loader().get_request_sequences()
 
 def extract_version_from_string(s: str) -> Optional[str]:
     """Extract version from filename or URL string (case-insensitive)."""

@@ -307,6 +307,9 @@ class main_setup:
         # Download taxdump if enabled in sources.yaml
         self._download_taxdump()
 
+        # Process request sequences from sources.yaml
+        self.wdir.install_requests()
+
     def _download_category_databases(self, category: str, db_configs: list):
         """
         Download databases for a category using config from sources.yaml.
@@ -487,7 +490,7 @@ class main_setup:
         ######################### centrifuge (download) ###############################
 
         for db_name, entry in list_enabled_databases('centrifuge'):
-            if db_name == "viral":
+            if db_name in ["viral", "bacteria"]:
                 install_success = sofprep.centrifuge_install(dbname=self.organism)
                 centlib = f"refseq-{self.organism}.dust.fna.gz"
                 fasta_key = "centrifuge"

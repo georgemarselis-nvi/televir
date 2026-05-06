@@ -56,20 +56,6 @@ RUN apt-get install zlib1g-dev make g++
 
 WORKDIR /opt/televir
 
-ADD https://api.github.com/repos/SantosJGND/TELEVIR/git/refs/heads/install-stdl version.json
-RUN mkdir -p /opt/televir-repo && \
-    wget --quiet https://github.com/SantosJGND/TELEVIR/archive/install-stdl.zip -O televir.zip && \
-    unzip -q televir.zip && \
-    cp -r TELEVIR-install-stdl/. /opt/televir-repo/ && \    
-    rm -rf TELEVIR-install-stdl && \
-    rm televir.zip && \
-    chown -R ${APP_USER}:slurm /opt/televir-repo
-
-ARG REQUEST_SEQ_FILE=""
-RUN if [ -n "$REQUEST_SEQ_FILE" ] && [ -f "$REQUEST_SEQ_FILE" ]; then \
-    cp $REQUEST_SEQ_FILE /opt/request_sequences.fa.gz; \
-    fi
-
 COPY televir.env /opt/data/televir.env
 ADD prebuilt/ /opt/data/prebuilt/
 

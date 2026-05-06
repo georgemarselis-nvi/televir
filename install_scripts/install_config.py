@@ -73,7 +73,6 @@ class TelevirLayout:
         "install_refseq_16s": ("ribosomal_rna", "refseq_16s"),
         "install_ribo16s": ("ribosomal_rna", "silva_16s"),
         "install_ncbi_16s": ("ribosomal_rna", "ncbi_16s"),
-        "install_request_sequences": ("taxonomy", "requests"),
         
         # Classification indices as databases (also saved as software)
         "install_kaiju": ("kaiju", "viral"),

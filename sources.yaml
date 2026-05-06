@@ -176,7 +176,18 @@ databases:
     centrifuge:
       fungi_curated:
         description: "Curated Fungi Centrifuge index (user-provided)"
-
+  
+  # ---------------------------------------------------------------------------
+  # Request Sequences (user-provided)
+  # Specify multiple custom sequence files for request processing
+  # Each entry must have a 'path' key pointing to the file
+  # ---------------------------------------------------------------------------
+  request_sequences:
+    - path: ""
+      description: "Custom request sequences file"
+    # - path: "/opt/televir/ref_fasta/my_seqs.fa.gz"
+    #   description: "My custom sequences"
+  
   # ---------------------------------------------------------------------------
   # MetaPhlAn Databases
   # ---------------------------------------------------------------------------

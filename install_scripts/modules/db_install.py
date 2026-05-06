@@ -686,55 +686,64 @@ class setup_dl:
 
 
     def install_requests(self):
-        references_file = os.path.join(self.seqdir, "request_references.fa")
+        files = self.requests.get("FILES", [])
+        if not files:
+            return False
 
-        if os.path.isfile(references_file):
-            self.fastas["nuc"]["requests"] = [references_file]
-            self.db_versions["requests"] = {
-                "version": self.get_file_mod_date(references_file),
-                "source_url": "user_provided",
-                "file_mod_date": self.get_file_mod_date(references_file)
-            }
-            return True
+        success = False
+        for seq_entry in files:
+            if not isinstance(seq_entry, dict):
+                continue
 
-        if os.path.isfile(references_file + ".gz"):
-            self.fastas["nuc"]["requests"] = [references_file + ".gz"]
-            self.db_versions["requests"] = {
-                "version": self.get_file_mod_date(references_file + ".gz"),
-                "source_url": "user_provided",
-                "file_mod_date": self.get_file_mod_date(references_file + ".gz")
-            }
-            return True
+            path = seq_entry.get("path", "")
+            description = seq_entry.get("description", "")
 
-        seq_file = self.requests.get("FILE", "")
-        if seq_file and os.path.isfile(seq_file):
-            logging.info(f"Using provided request sequences file: {seq_file}")
-            shutil.copy(seq_file, references_file)
-            if not references_file.endswith(".gz"):
-                os.system(f"{BGZIP_BIN} {references_file}")
-                references_file = references_file + ".gz"
-            
-            self.fastas["nuc"]["requests"] = [references_file]
-            self.db_versions["requests"] = {
-                "version": self.get_file_mod_date(references_file),
-                "source_url": seq_file,
-                "file_mod_date": self.get_file_mod_date(references_file)
-            }
-            logging.info("request sequences from file prepped.")
-            return True
+            if not path or not os.path.isfile(path):
+                logging.warning(f"Request sequence file not found: {path}")
+                continue
+
+            basename = os.path.basename(path)
+            for ext in [".gz", ".fa", ".fasta", ".fna"]:
+                if basename.endswith(ext):
+                    basename = basename[: -len(ext)]
+                    break
+            key = f"requests_{basename}"
+
+            dest_file = os.path.join(self.seqdir, os.path.basename(path))
+            if path != dest_file and not os.path.exists(dest_file):
+                shutil.copy(path, dest_file)
+                logging.info(f"Copied request sequences file to {dest_file}")
+            else:
+                dest_file = path if os.path.exists(path) else dest_file
+
+            if not dest_file.endswith(".gz") and os.path.exists(dest_file):
+                os.system(f"{BGZIP_BIN} {dest_file}")
+                dest_file = dest_file + ".gz"
+
+            if os.path.isfile(dest_file):
+                self.fastas["nuc"][key] = [dest_file]
+                self.db_versions[key] = {
+                    "version": self.get_file_mod_date(dest_file),
+                    "source_url": path,
+                    "file_mod_date": self.get_file_mod_date(dest_file),
+                    "description": description,
+                }
+                logging.info(f"Request sequences '{key}' prepped from {path}.")
+                success = True
 
         if self.requests.get("ACCID"):
             acc_tsv = self.requests["ACCID"]
             tempfile = os.path.join(self.metadir, "accession_requests.tsv")
+            references_file = os.path.join(self.seqdir, "request_references.fa")
+
             if os.path.isfile(acc_tsv):
                 shutil.copy(acc_tsv, tempfile)
             elif "https" in acc_tsv:
                 try:
                     subprocess.run(["curl", "-o", tempfile, acc_tsv])
-
                 except subprocess.CalledProcessError:
                     logging.error("accid request file not found")
-                    return False
+                    return success
 
             accid_list = []
             with open(tempfile, "r") as tf:
@@ -744,19 +753,19 @@ class setup_dl:
             for accid in accid_list:
                 entrez_fetch_sequence(accid, references_file)
 
-        if os.path.isfile(references_file) and os.path.getsize(references_file):
-            os.system(f"{BGZIP_BIN} {references_file}")
-            references_file = references_file + ".gz"
-            self.fastas["nuc"]["requests"] = [references_file]
-            self.db_versions["requests"] = {
-                "version": self.get_file_mod_date(references_file),
-                "source_url": "entrez_accid",
-                "file_mod_date": self.get_file_mod_date(references_file)
-            }
-            logging.info("request sequences prepped.")
-            return True
-        else:
-            return False
+            if os.path.isfile(references_file) and os.path.getsize(references_file):
+                os.system(f"{BGZIP_BIN} {references_file}")
+                references_file = references_file + ".gz"
+                self.fastas["nuc"]["requests"] = [references_file]
+                self.db_versions["requests"] = {
+                    "version": self.get_file_mod_date(references_file),
+                    "source_url": "entrez_accid",
+                    "file_mod_date": self.get_file_mod_date(references_file),
+                }
+                logging.info("Request sequences from ACCID prepped.")
+                success = True
+
+        return success
 
     def refseq_prot_dl(self, url: str, filename: str, db_key: str = "refseq_prot"):
         """
@@ -2306,7 +2315,7 @@ class setup_install(setup_dl):
                 "status": "success",
             }
             return True
-
+        
         try:
             filename = os.path.basename(href)
             os.makedirs(sdir, exist_ok=True)
