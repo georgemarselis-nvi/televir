@@ -2302,9 +2302,9 @@ class setup_install(setup_dl):
             os.system(f"rm {sdir}/{filename}")
 
             files_in_directory = os.listdir(sdir)
-            index_files = [f for f in files_in_directory if f.endswith(".cf")]
-            for f in index_files:
-                os.rename(os.path.join(sdir, f), f"{index_file_prefix}.{f.split('.')[-1]}.cf")
+            index_files = sorted([f for f in files_in_directory if f.endswith(".cf")])
+            for ix, f in enumerate(index_files):
+                os.rename(os.path.join(sdir, f), f"{index_file_prefix}.{ix+1}.cf")
 
 
             if os.path.isfile(index_file_prefix + ".1.cf"):
