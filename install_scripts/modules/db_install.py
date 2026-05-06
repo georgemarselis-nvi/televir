@@ -2275,6 +2275,7 @@ class setup_install(setup_dl):
             self.dbs[id] = {
                 "dir": odir,
                 "dbname": dbname,
+                "fasta": "",
                 "db": index_file_prefix,
                 "status": "success",
             }
@@ -2294,6 +2295,18 @@ class setup_install(setup_dl):
             else:
                 logging.info(f"Centrifuge db {dbname} is not installed. Installing...")
 
+
+        if os.path.isfile(index_file_prefix + ".1.cf"):
+            logging.info(f"Centrifuge db {dbname} index is installed.")
+            self.dbs[id] = {
+                "dir": odir,
+                "dbname": dbname,
+                "fasta": "",
+                "db": index_file_prefix,
+                "status": "success",
+            }
+            return True
+
         try:
             filename = os.path.basename(href)
             os.makedirs(sdir, exist_ok=True)
@@ -2312,6 +2325,7 @@ class setup_install(setup_dl):
                 self.dbs[id] = {
                     "dir": odir,
                     "dbname": dbname,
+                    "fasta": "",
                     "db": index_file_prefix,
                     "status": "success",
                 }
