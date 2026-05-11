@@ -601,7 +601,7 @@ def get_prebuilt_index_path(tool: str, dbname: str) -> Optional[str]:
 
 def get_prebuilt_indices_tool(tool: str) -> list:
     """Get all prebuilt indices for a specific tool."""
-    return get_loader().get_prebuilt_indices_tool()
+    return get_loader().get_prebuilt_indices_tool(tool)
 
 def get_request_sequences() -> list:
     """Get request sequences list from sources.yaml.

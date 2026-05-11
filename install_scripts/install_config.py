@@ -39,6 +39,7 @@ class TelevirLayout:
     install_diamond = True
     install_minimap2 = True
     install_fastviromeexplorer = True
+    install_clark = True
     install_blast = True
 
     # Pre-built index configuration (list-based)
@@ -89,6 +90,7 @@ class TelevirLayout:
         "install_krakenuniq": ("krakenuniq", "default"),
         "install_diamond": ("diamond", "swissprot"),
         "install_voyager_viral": ("voyager", "viral"),
+        "install_clark"
         "install_blast": ("blast", "genome"),
         "install_fastviromeexplorer": ("fastviromeexplorer", "viral"),
     }

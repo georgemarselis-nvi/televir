@@ -239,11 +239,12 @@ class main_setup:
         """
         envprep = self.env_manager
         envprep.prep_dir()
+
         # if self.layout.install_flye:
         #    envprep.flye_install()
 
-        # if self.layout.install_clark:
-        #    envprep.clark_install()
+        if self.layout.install_clark:
+           envprep.clark_install()
 
         if self.layout.install_fastviromeexplorer:
             envprep.fve_install()
@@ -260,9 +261,9 @@ class main_setup:
         os.system(
             f"cp {self.pdir}bin/krakenuniq-download* {ENVS_PARAMS['ENVSDIR']}hostDepletion/hostdep_env/bin/"
         )
-        os.system(
-            f"cp {self.pdir}bin/centrifuge-download {ENVS_PARAMS['ENVSDIR']}hostDepletion/hostdep_env/bin/"
-        )
+        #os.system(
+        #    f"cp {self.pdir}bin/centrifuge-download {ENVS_PARAMS['ENVSDIR']}hostDepletion/hostdep_env/bin/"
+        #)
         os.system(
             f"cp {self.pdir}bin/rsync_from_ncbi.pl {ENVS_PARAMS['ENVSDIR']}kraken2/kraken_env/libexec/"
         )
@@ -598,20 +599,23 @@ class main_setup:
 
         ########################### clark ##################################
 
-        # if self.layout.install_clark:
-        #    success_install = sofprep.clark_install(dbname=self.organism)
-        #    if success_install:
-        #        self.installed_software.append(self.software_install_string("clark"))
-        #
-        #        self.utilities.add_software(
-        #            self.utilities.software_item(
-        #                "clark",
-        #                sofprep.dbs["clark"]["db"],
-        #                "default",
-        #                True,
-        #                sofprep.envs["ROOT"] + sofprep.envs["clark"],
-        #            )
-        #        )
+        if self.layout.install_clark:
+            success_install = sofprep.clark_install(dbname=self.organism)
+
+            if success_install:
+                self.installed_software.append(self.software_install_string("clark"))
+
+            sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_voyager_viral", ("voyager", "viral"))
+            self.utilities.add_software(
+                self.utilities.software_item(
+                    sw_name,
+                    sofprep.dbs["voyager"]["db"],
+                    sw_tag,
+                    success_install,
+                    sofprep.envs["ROOT"] + sofprep.envs["voyager"],
+                    binary_name="voyager",
+                )
+            )
 
         ########################### voyager ###############################
 
