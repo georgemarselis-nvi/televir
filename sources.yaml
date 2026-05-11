@@ -176,7 +176,7 @@ databases:
     centrifuge:
       fungi_curated:
         description: "Curated Fungi Centrifuge index (user-provided)"
-  
+
   # ---------------------------------------------------------------------------
   # Request Sequences (user-provided)
   # Specify multiple custom sequence files for request processing
@@ -187,7 +187,7 @@ databases:
       description: "Custom request sequences file"
     # - path: "/opt/televir/ref_fasta/my_seqs.fa.gz"
     #   description: "My custom sequences"
-  
+
   # ---------------------------------------------------------------------------
   # MetaPhlAn Databases
   # ---------------------------------------------------------------------------
@@ -371,6 +371,10 @@ software:
       url: "https://github.com/usadellab/Trimmomatic.git"
       description: "Trimmomatic Git repository"
       branch: "develop"
+    centrifuge:
+      url: "https://github.com/DaehwanKimLab/centrifuge.git"
+      description: "Centrifuge Git repository"
+      branch: "master"
 
   # ---------------------------------------------------------------------------
   # Conda Tools (binary-based software)

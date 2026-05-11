@@ -212,6 +212,33 @@ class env_install:
             return bin
 
         return None
+    
+    def centrifuge_install(self, force_install= False):
+        """Centrifuge install"""
+
+        soft = "classification/Centrifuge"
+        sdir = os.path.join(self.envsdir, soft.split("/")[0])
+
+        try:
+            git = self.git[soft]
+        except KeyError:
+            print("No git repo for %s" % soft)
+            return
+
+        CWD = os.getcwd()
+        os.chdir(self.envsdir)
+
+        idir = os.path.join(sdir, git.split("/")[-1].strip(".git"))
+        exists = os.path.isdir(idir)
+        command = ["git", "clone", git]
+
+        if not exists or force_install:
+            os.makedirs(sdir, exist_ok=True)
+            subprocess.run(command)
+            os.chdir(idir)
+            subprocess.run(["make install - prefix=" + os.path.abspath(idir)])
+
+        os.chdir(CWD)
 
     def deSAMBA_install(self, force_install=False):
         """

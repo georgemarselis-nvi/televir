@@ -50,6 +50,7 @@ class TelevirStatusApp(ctk.CTk):
         self.GIT_INSTALL_PATHS = {
             "fastviromeexplorer": "FastViromeExplorer",
             "desamba": "classm_lc/deSAMBA",
+            'centrifuge': "classification/Centrifuge",
             "rabbitqc_git": "RabbitQC",
             "trimmomatic_git": "trimmomatic",
         }
