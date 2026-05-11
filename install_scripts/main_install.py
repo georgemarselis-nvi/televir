@@ -251,6 +251,9 @@ class main_setup:
         if self.layout.install_voyager_viral:
             envprep.voyager_install()
 
+
+        envprep.centrifuge_install()
+
         # if self.layout.install_desamba:
         #    envprep.deSAMBA_install()
 

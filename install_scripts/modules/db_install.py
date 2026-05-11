@@ -2498,7 +2498,7 @@ class setup_install(setup_dl):
             dbdir = id
 
         odir = self.dbdir + dbdir + "/"
-        bin = self.envs["ROOT"] + self.envs[id] + "/bin/"
+        bin = self.envs["ROOT"] + self.envs[id] + "/"
         sdir = odir + dbname + "/" + dbname
         index_file_prefix = f"{odir}{dbname}/{dbname}_index"
         old_index_file_prefix = f"{odir}{dbname}/index"
