@@ -236,7 +236,11 @@ class env_install:
             os.makedirs(sdir, exist_ok=True)
             subprocess.run(command)
             os.chdir(idir)
-            subprocess.run(["make install - prefix=" + os.path.abspath(idir)])
+            subprocess.run([
+                "make",
+                "install",
+                "prefix={}".format(os.path.join(self.envsdir, self.envs["centrifuge"]))
+            ])
 
         os.chdir(CWD)
 
