@@ -493,7 +493,7 @@ class main_setup:
         ######################### centrifuge (download) ###############################
 
         for db_name, entry in list_enabled_databases('centrifuge'):
-            if db_name in ["viral", "bacteria"]:
+            if db_name in ["ignore"]:#["viral", "bacteria"]:
                 install_success = sofprep.centrifuge_install(dbname=self.organism)
                 centlib = f"refseq-{self.organism}.dust.fna.gz"
                 fasta_key = "centrifuge"
