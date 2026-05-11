@@ -216,7 +216,7 @@ class env_install:
     def centrifuge_install(self, force_install= False):
         """Centrifuge install"""
 
-        soft = "classification/Centrifuge"
+        soft = "classification/centrifuge"
         sdir = os.path.join(self.envsdir, soft.split("/")[0])
 
         try:
@@ -226,7 +226,7 @@ class env_install:
             return
 
         CWD = os.getcwd()
-        os.chdir(self.envsdir)
+        os.chdir(sdir)
 
         idir = os.path.join(sdir, git.split("/")[-1].strip(".git"))
         exists = os.path.isdir(idir)

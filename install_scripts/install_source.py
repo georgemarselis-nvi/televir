@@ -44,7 +44,7 @@ def _load_software_from_sources():
     # sources.yaml name -> (env_install_key, type)
     software_mapping = {
         'fastviromeexplorer': ('FastViromeExplorer/fve', 'git'),
-        'centrifuge': ('classification/Centrifuge', 'git'),
+        'centrifuge': ('classification/centrifuge', 'git'),
         'desamba': ('classm_lc/deSAMBA', 'git'),
         'rabbitqc': ('preprocess/RabbitQC', 'git'),
         'rabbitqc_git': ('preprocess/RabbitQC', 'git'),
@@ -80,7 +80,7 @@ INSTALL_PARAMS = {
         "SOURCE": SOURCE,
         "ROOT": ENVDIR,
         #"centrifuge": "hostDepletion/hostdep_env",
-        'centrifuge': "classification/Centrifuge",
+        'centrifuge': "classification/centrifuge",
         "minimap2": "hostDepletion/hostdep_env",
         "jellyfish": "hostDepletion/hostdep_env",
         "diamond": "hostDepletion/hostdep_env",

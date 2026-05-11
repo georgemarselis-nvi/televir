@@ -50,7 +50,7 @@ class Televir_Metadata:
             CS.PIPELINE_NAME_read_classification: "hostDepletion/hostdep_env",
             CS.PIPELINE_NAME_viral_enrichment: "hostDepletion/hostdep_env",
             #"centrifuge": "hostDepletion/hostdep_env",
-            'centrifuge': "classification/Centrifuge",
+            'centrifuge': "classification/centrifuge",
             "diamond": "hostDepletion/hostdep_env",
             "kaiju": "hostDepletion/hostdep_env",
             "krakenuniq": "hostDepletion/hostdep_env",
