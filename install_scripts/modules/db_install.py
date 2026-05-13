@@ -14,7 +14,7 @@ from threading import Thread
 import sys
 import pandas as pd
 from install_scripts.host_library import Host
-from install_scripts.load_sources import get_db_url, get_db_version
+from install_scripts.load_sources import get_db_url, get_db_version, get_db_file
 
 from fastq_filter import file_to_fastq_records
 
@@ -435,7 +435,7 @@ class setup_dl:
             logging.warning(f"{filename} exists but is corrupted. Re-downloading...")
         try:
             subprocess.run(
-                ["wget", url, "-P", self.seqdir],
+                ["wget", url, "-O", filepath],
                 check=False,
             )
         except subprocess.CalledProcessError:
@@ -2265,6 +2265,7 @@ class setup_install(setup_dl):
         
 
         href = get_db_url('centrifuge', dbname)
+        filename = get_db_file('centrifuge', dbname)
         if not href:
             logging.error(f"No source URL found for centrifuge/{dbname}")
             return False
@@ -2293,13 +2294,6 @@ class setup_install(setup_dl):
         else:
             if self.test:
                 logging.info(f"Centrifuge db {dbname} is not installed.")
-                self.dbs[id] = {
-                    "dir": odir,
-                    "dbname": dbname,
-                    "fasta": "",
-                    "db": index_file_prefix,
-                    "status": "test",
-                }
                 return False
             else:
                 logging.info(f"Centrifuge db {dbname} is not installed. Installing...")
@@ -2317,9 +2311,9 @@ class setup_install(setup_dl):
             return True
         
         try:
-            filename = os.path.basename(href)
+
             os.makedirs(sdir, exist_ok=True)
-            os.system(f"wget -P {sdir} {href}")
+            os.system(f"wget {href} -O {sdir}/{filename}")
             os.system(f" tar -xvzf {sdir}/{filename} -C {sdir}")
             os.system(f"rm {sdir}/{filename}")
 
@@ -2341,23 +2335,10 @@ class setup_install(setup_dl):
                 return True
             else:
                 logging.info(f"Centrifuge db {dbname} index is not installed.")
-                self.dbs[id] = {
-                    "dir": odir,
-                    "dbname": dbname,
-                    "fasta": "",
-                    "db": index_file_prefix,
-                    "status": "failed",
-                }
+
                 return False
         except subprocess.CalledProcessError:
             logging.error(f"Error occurred while installing centrifuge db {dbname}.")
-            self.dbs[id] = {
-                "dir": odir,
-                "dbname": dbname,
-                "fasta": "",
-                "db": index_file_prefix,
-                "status": "failed",
-            }
             return False
 
     def centrifuge_register_prebuilt(self, dbname, id = "centrifuge"):

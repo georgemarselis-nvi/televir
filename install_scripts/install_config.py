@@ -90,7 +90,7 @@ class TelevirLayout:
         "install_krakenuniq": ("krakenuniq", "default"),
         "install_diamond": ("diamond", "swissprot"),
         "install_voyager_viral": ("voyager", "viral"),
-        "install_clark"
+        "install_clark": ("clark", "viral"),
         "install_blast": ("blast", "genome"),
         "install_fastviromeexplorer": ("fastviromeexplorer", "viral"),
     }

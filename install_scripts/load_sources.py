@@ -518,6 +518,13 @@ def get_db_url(category: str, name: str) -> Optional[str]:
     """Get database URL."""
     return get_loader().get_db_url(category, name)
 
+def get_db_file(category: str, name: str) -> Optional[str]:
+    """Get database file name from sources.yaml."""
+    entry = get_loader().get_db_entry(category, name)
+    if entry and isinstance(entry, dict):
+        return entry.get('file')
+    return None
+
 def get_db_version(category: str, name: str) -> Optional[str]:
     """Get database version from sources.yaml.
     

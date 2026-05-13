@@ -617,6 +617,22 @@ class main_setup:
                 )
             )
 
+            # Also register as database
+            db_cat = "clark"
+            db_entry = get_db_entry(db_cat, dbname)
+            db_desc = db_entry.get("description") if db_entry else None
+            self.utilities.add_database(
+                self.utilities.database_item(
+                    name=dbname,
+                    path=sofprep.dbs.get("clark", {}).get("db", ""),
+                    installed=install_success,
+                    software=db_cat,
+                    db_type="filter",
+                    description=db_desc,
+                )
+            )
+
+
         ########################### voyager ###############################
 
         if self.layout.install_voyager_viral:
@@ -809,21 +825,6 @@ class main_setup:
                 )
             )
 
-        # if self.layout.install_krakenuniq_fungi:
-        #    success_install = sofprep.kuniq_install(dbname="fungi")
-        #    if success_install:
-        #        self.installed_software.append(
-        #            self.software_install_string("krakenuniq")
-        #        )
-        #        self.utilities.add_software(
-        #            self.utilities.software_item(
-        #                "krakenuniq",
-        #                sofprep.dbs["krakenuniq"]["db"],
-        #                "fungi",
-        #                True,
-        #                sofprep.envs["ROOT"] + sofprep.envs["krakenuniq"],
-        #            )
-        #        )
 
         # install viral specific databases
         if self.layout.install_kaiju:
