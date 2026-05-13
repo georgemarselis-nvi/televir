@@ -605,15 +605,15 @@ class main_setup:
             if success_install:
                 self.installed_software.append(self.software_install_string("clark"))
 
-            sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_voyager_viral", ("voyager", "viral"))
+            sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_clark_viral", ("clark", "viral"))
             self.utilities.add_software(
                 self.utilities.software_item(
                     sw_name,
-                    sofprep.dbs["voyager"]["db"],
+                    sofprep.dbs["clark"]["db"],
                     sw_tag,
                     success_install,
-                    sofprep.envs["ROOT"] + sofprep.envs["voyager"],
-                    binary_name="voyager",
+                    sofprep.envs["ROOT"] + sofprep.envs["clark"],
+                    binary_name="clark",
                 )
             )
 
