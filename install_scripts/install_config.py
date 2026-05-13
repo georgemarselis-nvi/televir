@@ -35,7 +35,8 @@ class TelevirLayout:
     install_metaphlan = False
     install_voyager_viral = False
     install_krakenuniq = True
-    install_kaiju = True
+    # NOTE: kaiju installation is now controlled
+    # by the 'install' field in sources.yaml under databases.kaiju section.
     install_diamond = True
     install_minimap2 = True
     install_fastviromeexplorer = True
@@ -75,8 +76,8 @@ class TelevirLayout:
         "install_ribo16s": ("ribosomal_rna", "silva_16s"),
         "install_ncbi_16s": ("ribosomal_rna", "ncbi_16s"),
         
-        # Classification indices as databases (also saved as software)
-        "install_kaiju": ("kaiju", "viral"),
+        # NOTE: kaiju entries are now handled by looping over
+        # sources.yaml databases with install: true
     }
 
     # Software name mapping: install flag -> (software_name, tag)
@@ -86,7 +87,8 @@ class TelevirLayout:
     # sources.yaml databases with install: true
     SOFTWARE_NAMES = {
         "install_metaphlan": ("metaphlan", "default"),
-        "install_kaiju": ("kaiju", "viral"),
+        # NOTE: kaiju entries are now handled by looping over
+        # sources.yaml databases with install: true
         "install_krakenuniq": ("krakenuniq", "default"),
         "install_diamond": ("diamond", "swissprot"),
         "install_voyager_viral": ("voyager", "viral"),

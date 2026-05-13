@@ -377,12 +377,13 @@ class main_setup:
                 success = self.wdir.refseq_prot_dl(url, filename, db_name)
             else:
                 success = self.wdir.refseq_gen_dl(url, filename, db_name)
+                
             
             if success:
                 self.installed_databases.append(
                     self.database_install_string(db_name)
                 )
-            
+
             db_ver = self.wdir.db_versions.get(db_name, {})
             db_path = self.wdir.fastas.get(db_key, {}).get(db_name, [""])[0]
             db_desc = refseq_entry.get("description")
@@ -511,7 +512,7 @@ class main_setup:
                 )
             else:
                 if not os.path.isfile(f"{prepdl.seqdir}{centlib}"):
-                    logging.info(f"centrifuge {db_name} database not found.")
+                    logging.info(f"centrifuge {db_name} fasta database not found.")
 
             if os.path.isfile(f"{prepdl.seqdir}{centlib}"):
                 prepdl.fastas["nuc"][fasta_key] = [
@@ -740,7 +741,6 @@ class main_setup:
         for dbname in get_prebuilt_indices_tool("kraken2"):
             success_install = sofprep.kraken2_register_prebuilt(dbname=dbname)
 
-
             if not success_install:
                 logging.info(f"Kraken2/{dbname} not installed (prebuilt not found)")
                 if "kraken2" in sofprep.dbs:
@@ -826,13 +826,16 @@ class main_setup:
             )
 
 
-        # install viral specific databases
-        if self.layout.install_kaiju:
-            success_install = sofprep.kaiju_dl_install(dbname="viral")
+        ########################## kaiju (download) ###############################
+
+        for db_name, entry in list_enabled_databases('kaiju'):
+            success_install = sofprep.kaiju_dl_install(dbname=db_name)
+
             if success_install:
                 self.installed_software.append(self.software_install_string("kaiju"))
 
-            sw_name, sw_tag = self.layout.SOFTWARE_NAMES.get("install_kaiju", ("kaiju", "viral"))
+            kaiju_ver = sofprep.dbs.get("kaiju", {}).get("version", "")
+            sw_name, sw_tag = ("kaiju", db_name)
             self.utilities.add_software(
                 self.utilities.software_item(
                     sw_name,
@@ -840,12 +843,13 @@ class main_setup:
                     sw_tag,
                     success_install,
                     sofprep.envs["ROOT"] + sofprep.envs["kaiju"],
+                    db_version=kaiju_ver,
                     binary_name="kaiju",
                 )
             )
 
             # Also register as database
-            db_cat, db_name = self.layout.DATABASE_NAMES.get("install_kaiju", ("kaiju", "viral"))
+            db_cat = "kaiju"
             db_entry = get_db_entry(db_cat, db_name)
             db_desc = db_entry.get("description") if db_entry else None
             self.utilities.add_database(
@@ -854,7 +858,8 @@ class main_setup:
                     path=sofprep.dbs["kaiju"]["db"],
                     installed=success_install,
                     software=db_cat,
-                    db_type="viral",
+                    db_type="filter",
+                    version=kaiju_ver,
                     description=db_desc,
                 )
             )
@@ -1081,7 +1086,7 @@ class main_setup:
                 #            )
                 #        )
 
-                if self.layout.install_fastviromeexplorer:
+                if self.layout.install_fastviromeexplorer and len(fd_list) == 1:
                     install_success = sofprep.fve_install(
                         reference=fpath,
                         dbname=fname,
@@ -1116,7 +1121,7 @@ class main_setup:
                         )
                     )
 
-                if self.layout.install_blast:
+                if self.layout.install_blast and len(fd_list) == 1:
                     install_success = sofprep.blast_install(
                         reference=fpath,
                         dbname=fname,

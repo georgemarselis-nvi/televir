@@ -1,3 +1,5 @@
+#
+notes/
 prebuilt/*
 check_local.sh
 install_scripts/__pycache__/

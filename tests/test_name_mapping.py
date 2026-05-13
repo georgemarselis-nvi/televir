@@ -286,7 +286,7 @@ class TestTelevirLayoutAttributes:
         expected = [
             'install_kraken2', 'install_kraken2_bacteria', 'install_kraken2_eupathdb46',
             'install_centrifuge', 'install_centrifuge_bacteria', 'install_metaphlan',
-            'install_kaiju', 'install_krakenuniq', 'install_diamond',
+            'install_krakenuniq', 'install_diamond',
             'install_voyager_viral', 'install_blast', 'install_fastviromeexplorer', 'install_voyager_viral'
         ]
         for attr in expected:

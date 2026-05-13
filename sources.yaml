@@ -212,26 +212,36 @@ databases:
       url: "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_viruses_2024-08-15.tgz"
       description: "Kaiju viral database (August 2024)"
       file: "kaiju_db_viruses_2024-08-15.tgz"
+      version: "2024-08-15"
+      install: true
 
     fungi:
       url: "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_fungi_2024-08-16.tgz"
       description: "Kaiju fungi database (August 2024)"
       file: "kaiju_db_fungi_2024-08-16.tgz"
+      version: "2024-08-16"
+      install: false
 
     bacteria:
       url: "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2024/kaiju_db_refseq_ref_2024-08-14.tgz"
       description: "Kaiju RefSeq reference database (August 2024)"
       file: "kaiju_db_refseq_ref_2024-08-14.tgz"
+      version: "2024-08-14"
+      install: false
 
     viruses_2021:
       url: "https://kaiju.binf.ku.dk/database/kaiju_db_viruses_2021-02-24.tgz"
       description: "Kaiju viral database (February 2021)"
       file: "kaiju_db_viruses_2021-02-24.tgz"
+      version: "2021-02-24"
+      install: false
 
     fungi_2023:
       url: "https://kaiju-idx.s3.eu-central-1.amazonaws.com/2023/kaiju_db_fungi_2023-05-26.tgz"
       description: "Kaiju fungi database (May 2023)"
       file: "kaiju_db_fungi_2023-05-26.tgz"
+      version: "2023-05-26"
+      install: false
 
   # ---------------------------------------------------------------------------
   # Taxonomy / NCBI Accession2Taxid
