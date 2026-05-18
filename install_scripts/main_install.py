@@ -455,13 +455,13 @@ class main_setup:
         """
         generate metadata files for prot databases.
         """
-        self.wdir.prot_metadata(use_sqlite=True)
+        self.wdir.prot_metadata()
         #self.wdir.generate_main_protacc_to_taxid()
 
     def dl_metadata_nuc(self):
         """
         generate metadata files for nuc databases."""
-        self.wdir.nuc_metadata(use_sqlite=True)
+        self.wdir.nuc_metadata()
 
     def db_generate_intrinsic(self, prepdl: setup_dl):
         """
