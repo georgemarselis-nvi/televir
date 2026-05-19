@@ -953,7 +953,7 @@ class setup_dl:
         os.system("rm {}".format(" ".join(fls)))
         subprocess.run([BGZIP_BIN, self.seqdir + outf])
 
-    def nuc_metadata(self, use_sqlite=True, outfile="acc2taxid.tsv"):
+    def nuc_metadata(self, use_sqlite=False, outfile="acc2taxid.tsv"):
         """
         merge accession and taxonomy info from nuc fasta files.
         Uses SQLite for memory-efficient processing and taxid population.
