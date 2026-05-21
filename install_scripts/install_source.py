@@ -100,6 +100,7 @@ INSTALL_PARAMS = {
         "prinseq": "preprocess/prinseq",
         "entrez_direct": "entrez_direct",
         "create_report": "Pyenv/igv_reports",
+        "spades": "assembly/assembly_env",
     },
     "BINDIR": {"deSAMBA": "classm_lc/deSAMBA"},
     "REQUEST_REFERENCES": {
