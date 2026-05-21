@@ -953,7 +953,7 @@ class setup_dl:
         os.system("rm {}".format(" ".join(fls)))
         subprocess.run([BGZIP_BIN, self.seqdir + outf])
 
-    def nuc_metadata(self, use_sqlite=False, outfile="acc2taxid.tsv"):
+    def nuc_metadata(self, use_sqlite=True, outfile="acc2taxid.tsv"):
         """
         merge accession and taxonomy info from nuc fasta files.
         Uses SQLite for memory-efficient processing and taxid population.
@@ -1005,8 +1005,10 @@ class setup_dl:
         ###
         ###
         tax2acc = []
+        print("Gathering accession and taxid info from nuc fasta files...")
 
         for dbs, fl_list in self.fastas["nuc"].items():
+            print(f"Processing {dbs}: {fl_list}")
             for fl in fl_list:
                 temp_file = self.metadir + dbs + "_temp.tsv"
 
@@ -2094,6 +2096,9 @@ class setup_dl:
                 return
         
         match_conn = sqlite3.connect(match_db)
+
+        # delete if exists
+        match_conn.execute("DROP TABLE IF EXISTS matches")
         match_conn.execute("CREATE TABLE matches (dbs TEXT, acc TEXT, taxid INTEGER)")
         
         acc_conn = sqlite3.connect(db_path)

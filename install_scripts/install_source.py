@@ -113,6 +113,7 @@ ENVS_PARAMS = {
     "ENVSDIR": ENVDIR,
     "YMLDIR": "yaml/",
     "ENVS": {
+        "assembly/assembly_env": "assembly.yml",
         "hostDepletion/hostdep_env": "HD.yml",
         "kraken2/kraken_env": "Krk2.yml",
         "hostDepletion/vs2": "virsorter.yml",
