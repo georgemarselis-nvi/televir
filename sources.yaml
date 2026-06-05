@@ -106,7 +106,7 @@ databases:
       version: "20260226"
       install: true
 
-  standard16:
+    standard16:
       url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_16_GB_20260226.tar.gz"
       description: "Kraken2 pre-built standard 16GB database"
       file: "k2_standard_16_GB_20260226.tar.gz"
