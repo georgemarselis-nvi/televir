@@ -69,6 +69,7 @@ class Televir_Metadata:
             "snippy": "remap/remap",
             "bamutil": "remap/remap",
             "msamtools": "remap/remap",
+            "gatk4": "remap/remap",
             "bcftools": "remap/remap",
             "samtools": "remap/remap",
             "bwa": "remap/remap",
