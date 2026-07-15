@@ -369,6 +369,11 @@ software:
   # Git Repositories
   # ---------------------------------------------------------------------------
   git_repos:
+    mapping_to_matrix:
+      url: "https://github.com/SantosJGND/M2M.git"
+      description: "Mapping to Matrix (M2M) tool"
+      branch: "main"
+
     fastviromeexplorer:
       url: "https://github.com/saima-tithi/FastViromeExplorer.git"
       description: "FastViromeExplorer viral detection tool"

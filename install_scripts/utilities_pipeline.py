@@ -91,6 +91,7 @@ class Televir_Metadata:
             "create_report": "Pyenv/igv_reports",
             "entrez_direct": "entrez_direct",
             "bgzip": "hostDepletion/hostdep_env",
+            "mapping_to_matrix": "M2M",
         },
         CS.PIPELINE_NAME_remapping: {"default": "remap/remap"},
         CS.PIPELINE_NAME_remap_filtering: {"default": "remap/remap"},

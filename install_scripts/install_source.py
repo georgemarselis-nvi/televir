@@ -48,6 +48,7 @@ def _load_software_from_sources():
         'desamba': ('classm_lc/deSAMBA', 'git'),
         'rabbitqc': ('preprocess/RabbitQC', 'git'),
         'rabbitqc_git': ('preprocess/RabbitQC', 'git'),
+        'mapping_to_matrix': ('M2M', 'git'),
         'trimmomatic_git': ('trimmomatic', 'git'),
         'trimmomatic': ('trimmomatic', 'archive'),
         'clark': ('classification/Clark', 'archive'),
