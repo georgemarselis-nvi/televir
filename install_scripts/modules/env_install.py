@@ -310,6 +310,36 @@ class env_install:
 
         os.chdir(CWD)
 
+    def m2m_install(self, force_install=False):
+        """
+        Mapping to Matrix (M2M) installation.
+        Clones the git repo and builds with cargo.
+        """
+
+        soft = "M2M"
+        sdir = os.path.join(self.envsdir, soft)
+
+        try:
+            git = self.git[soft]
+        except KeyError:
+            print("No git repo for %s" % soft)
+            return
+
+        CWD = os.getcwd()
+        os.chdir(self.envsdir)
+
+        idir = os.path.join(sdir, git.split("/")[-1].strip(".git"))
+        exists = os.path.isdir(idir)
+        command = ["git", "clone", git]
+
+        if not exists or force_install:
+            os.makedirs(sdir, exist_ok=True)
+            subprocess.run(command)
+            #os.chdir(idir)
+            #subprocess.run(["cargo", "build", "--release"])
+
+        os.chdir(CWD)
+
     def voyager_install(self, force_install=False):
         """
         Voyager installation.

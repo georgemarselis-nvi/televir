@@ -255,6 +255,8 @@ class main_setup:
 
         envprep.centrifuge_install()
 
+        envprep.m2m_install()
+
         # if self.layout.install_desamba:
         #    envprep.deSAMBA_install()
 
