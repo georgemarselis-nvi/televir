@@ -81,7 +81,7 @@ INSTALL_PARAMS = {
         "SOURCE": SOURCE,
         "ROOT": ENVDIR,
         #"centrifuge": "hostDepletion/hostdep_env",
-        'centrifuge': "hostDepletion/hostDepletion",
+        'centrifuge': "classification/centrifuge",
         "minimap2": "hostDepletion/hostdep_env",
         "jellyfish": "hostDepletion/hostdep_env",
         "diamond": "hostDepletion/hostdep_env",
