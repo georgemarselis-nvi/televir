@@ -325,6 +325,16 @@ class env_install:
             print("No git repo for %s" % soft)
             return
 
+        
+        if os.path.exists(sdir):
+            if force_install:
+                shutil.rmtree(sdir)
+            else: 
+                return True
+
+        if not os.path.exists(sdir):
+            os.makedirs(sdir, exist_ok=True)
+
         CWD = os.getcwd()
         os.chdir(self.envsdir)
 
