@@ -239,16 +239,14 @@ class env_install:
             os.chdir(idir)
             subprocess.run([
                 "make",
-                "install",
-                "prefix={}".format(os.path.join(self.envsdir, self.install_params['ENVSDIR']["centrifuge"]))
+                "install"
             ])
 
-            os.system(
-                f"cp install_scripts/bin/* {os.path.join(self.envsdir, self.install_params['ENVSDIR']['centrifuge'])}"
-            )
-
-
         os.chdir(CWD)
+
+        os.system(
+            f"cp install_scripts/bin/* {os.path.join(self.envsdir, self.install_params['ENVSDIR']['centrifuge'])}"
+        )
 
     def deSAMBA_install(self, force_install=False):
         """
