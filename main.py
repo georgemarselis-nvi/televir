@@ -192,10 +192,6 @@ def main():
     if args.envs:
         metagen_prep.setup_envs()
 
-    os.system(
-        f"cp install_scripts/bin/* {ENVDIR + INSTALL_PARAMS['ENVSDIR']['centrifuge']}/"
-    )
-
     metagen_prep.setup_dir()
 
     if metagen_prep.seqdl or metagen_prep.soft:

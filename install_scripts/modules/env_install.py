@@ -242,6 +242,11 @@ class env_install:
                 "prefix={}".format(os.path.join(self.envsdir, self.envs["centrifuge"]))
             ])
 
+            os.system(
+                f"cp install_scripts/bin/* {os.path.join(self.envsdir, self.envs['centrifuge'])}"
+            )
+
+
         os.chdir(CWD)
 
     def deSAMBA_install(self, force_install=False):
