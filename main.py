@@ -155,7 +155,7 @@ def main():
     )
     utility_repository.clear_existing_repo()
 
-    env_manager = env_install(ENVS_PARAMS)
+    env_manager = env_install(ENVS_PARAMS, INSTALL_PARAMS)
 
     dl_manager = setup_dl(INSTALL_PARAMS, update=args.update, test=args.test)
 

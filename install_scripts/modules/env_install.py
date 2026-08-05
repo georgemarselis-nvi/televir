@@ -6,7 +6,7 @@ import subprocess
 
 
 class env_install:
-    def __init__(self, ENVDICT) -> None:
+    def __init__(self, ENVDICT, INSTALL_PARAMS) -> None:
         self.envsdir = ENVDICT["ENVSDIR"]
         self.ymld = ENVDICT["YMLDIR"]
         self.envs = ENVDICT["ENVS"]
@@ -14,6 +14,7 @@ class env_install:
         self.tar = ENVDICT["TAR"]
         self.source = ENVDICT["SOURCE"]
         self.bin = ENVDICT["BIN"]
+        self.install_params = INSTALL_PARAMS
 
     def prep_dir(self):
         os.makedirs(self.envsdir, exist_ok=True)
@@ -239,11 +240,11 @@ class env_install:
             subprocess.run([
                 "make",
                 "install",
-                "prefix={}".format(os.path.join(self.envsdir, self.envs["centrifuge"]))
+                "prefix={}".format(os.path.join(self.envsdir, self.install_params['ENVSDIR']["centrifuge"]))
             ])
 
             os.system(
-                f"cp install_scripts/bin/* {os.path.join(self.envsdir, self.envs['centrifuge'])}"
+                f"cp install_scripts/bin/* {os.path.join(self.envsdir, self.install_params['ENVSDIR']['centrifuge'])}"
             )
 
 

@@ -1314,7 +1314,7 @@ if __name__ == "__main__":
     )
 
     utility_repo = Utility_Repository(db_path="./", install_type="local")
-    env_manager = env_install(ENVS_PARAMS)
+    env_manager = env_install(ENVS_PARAMS, INSTALL_PARAMS)
     dl_manager = setup_dl(INSTALL_PARAMS)
     install_manager = setup_install(
         INSTALL_PARAMS, taxdump="", test=False, organism="viral"
