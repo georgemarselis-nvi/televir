@@ -388,9 +388,10 @@ for DOMAIN in $DOMAINS; do
       # sed 's/^\(.*\)\t\(ftp:.*\)\t.*/\1\t\2/;s/^\(.*\)\t.*\t\(ftp:.*\)/\1\t\2/' | \
       #sed 's#\([^/]*\)$#\1/\1_genomic.fna.gz#' |\
       #   tr '\n' '\0' | xargs -0 -n1 -P $N_PROC bash -c 'download_n_process_nofail "$@"' _ | count $N_EXPECTED
+      echo $TAXID_FIELD $FTP_PATH_FIELD $FTP_PATH_FIELD2 $ASSEMBLY_SUMMARY_FILE
       cut -f "$TAXID_FIELD,$FTP_PATH_FIELD,$FTP_PATH_FIELD2" "$ASSEMBLY_SUMMARY_FILE" | \
         awk -F "\t" '{if ($2~/ftp/) print $1"\t"$2; if ($3~/ftp/) print $1"\t"$3}' | \
-        sed 's#\([^/]*\)$#\1/\1_genomic.fna.gz#' |\
+        sed -E 's#/$##; s#([^/]+)$#\1/\1_genomic.fna.gz#' |\
         tr '\n' '\0' | xargs -0 -n1 -P $N_PROC bash -c 'download_n_process_nofail "$@"' _ | count $N_EXPECTED
 
     else
