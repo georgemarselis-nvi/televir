@@ -579,15 +579,10 @@ class setup_dl:
             return False
 
         try:
-            ftp = FTP(host)
-        except:
-            logging.info("refseq ftp attempt failed. Check internet connection.")
+            files = listdir(source_url)
+        except Exception:
+            logging.info("refseq listing failed. Check internet connection.")
             return False
-
-        ftp.login()
-        ftp.cwd(source)
-        files = ftp.nlst()
-        ftp.quit()
 
         ext_dict = [x.split(".") for x in files]
         ext_dict = [[".".join(x), ".".join(x[-3:])] for x in ext_dict]
