@@ -4,8 +4,10 @@ import datetime
 import gzip
 import logging
 import os
+import re
 import shutil
 import subprocess
+import urllib.request
 from ftplib import FTP
 from pathlib import Path
 from random import randint
@@ -436,43 +438,43 @@ class setup_dl:
         """
         Identify the latest assembly file in the latest_assembly_versions directory.
 
-        :param host: FTP host address.
-        :param base_path: Base path to the organism directory on the FTP server.
+        :param host: NCBI host address.
+        :param base_path: Base path to the organism directory on the server.
         :param latest_assembly_dir: Directory containing the latest assembly versions.
         :return: Full path to the latest assembly file ending with '_genomic.fna.gz'.
         """
+        base_url = f"https://{host}/{base_path.strip('/')}"
+        latest_assembly_url = f"{base_url}/{latest_assembly_dir}/"
+
+        def listdir(url):
+            with urllib.request.urlopen(url, timeout=60) as response:
+                html = response.read().decode("utf-8", "replace")
+            return [
+                href
+                for href in re.findall(r'href="([^"]+)"', html)
+                if "://" not in href and not href.startswith("?") and href != "../"
+            ]
+
         try:
-            ftp = FTP(host)
-            ftp.login()
+            subdirectories = [e.rstrip("/") for e in listdir(latest_assembly_url)]
 
-            # Navigate to the latest_assembly_versions directory
-            latest_assembly_path = os.path.join(base_path, latest_assembly_dir)
-            ftp.cwd(latest_assembly_path)
-
-            # Get the single subdirectory
-            subdirectories = ftp.nlst()
             if len(subdirectories) != 1:
                 raise ValueError(
                     "Expected a single subdirectory in latest_assembly_versions."
                 )
 
-            # Navigate to the subdirectory
-            ftp.cwd(subdirectories[0])
-
-            # Find the file ending with '_genomic.fna.gz'
-            files = ftp.nlst()
-            for file in files:
+            assembly_url = f"{latest_assembly_url}{subdirectories[0]}/"
+            for file in listdir(assembly_url):
                 if file.endswith("_genomic.fna.gz"):
-                    ftp.quit()
-                    return os.path.join(latest_assembly_path, subdirectories[0], file)
+                    return os.path.join(
+                        base_path, latest_assembly_dir, subdirectories[0], file
+                    )
 
-            ftp.quit()
             raise FileNotFoundError("No file ending with '_genomic.fna.gz' found.")
 
         except Exception as e:
             print(f"Error: {e}")
             return None
-
 
     def install_requests(self):
         references_file = os.path.join(self.seqdir, "request_references.fa.gz")
