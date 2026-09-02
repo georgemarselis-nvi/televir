@@ -29,6 +29,21 @@ try:
 except:
     pass
 
+def listdir(url):
+    """
+    List the entries of an NCBI https directory index.
+    Replaces the ftplib nlst calls this module used before NCBI retired ftp.
+    """
+    with urllib.request.urlopen(url, timeout=60) as response:
+        html = response.read().decode("utf-8", "replace")
+    return [
+        href
+        for href in re.findall(r'href="([^"]+)"', html)
+        if "://" not in href
+        and not href.startswith("?")
+        and not href.startswith("/")
+        and href != "../"
+    ]
 
 def grep_sequence_identifiers(str_input, output, ignore=""):
     """
@@ -445,15 +460,6 @@ class setup_dl:
         """
         base_url = f"https://{host}/{base_path.strip('/')}"
         latest_assembly_url = f"{base_url}/{latest_assembly_dir}/"
-
-        def listdir(url):
-            with urllib.request.urlopen(url, timeout=60) as response:
-                html = response.read().decode("utf-8", "replace")
-            return [
-                href
-                for href in re.findall(r'href="([^"]+)"', html)
-                if "://" not in href and not href.startswith("?") and href != "../"
-            ]
 
         try:
             subdirectories = [e.rstrip("/") for e in listdir(latest_assembly_url)]
