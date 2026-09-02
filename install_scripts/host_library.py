@@ -63,8 +63,8 @@ class CyprinusCarpio(Host):
 class AnasPlatyrhynchos(Host):
     def __init__(self):
         self.remote_host = "ftp.ncbi.nlm.nih.gov"
-        self.remote_path = "genomes/refseq/vertebrate_other/Anas_platyrhynchos/latest_assembly_versions/GCF_015476345.1_ZJU1.0/"
-        self.remote_filename = "GCF_015476345.1_ZJU1.0_genomic.fna.gz"
+        self.remote_path = "genomes/refseq/vertebrate_other/Anas_platyrhynchos/latest_assembly_versions/GCF_047663525.1_IASCAAS_PekinDuck_T2T/"
+        self.remote_filename = "GCF_047663525.1_IASCAAS_PekinDuck_T2T_genomic.fna.gz"
         self.host_name = "anas_platyrhynchos"
         self.common_name = "duck"
 
@@ -90,8 +90,8 @@ class PhlebotomusPapatasi(Host):
 class SusScrofa(Host):
     def __init__(self):
         self.remote_host = "ftp.ncbi.nlm.nih.gov"
-        self.remote_path = "/genomes/refseq/vertebrate_mammalian/Sus_scrofa/latest_assembly_versions/GCF_000003025.6_Sscrofa11.1/"
-        self.remote_filename = "GCF_000003025.6_Sscrofa11.1_genomic.fna.gz"
+        self.remote_path = "/genomes/refseq/vertebrate_mammalian/Sus_scrofa/latest_assembly_versions/GCF_054392235.1_Sscrofa_HxYL_maternal_Yorkshire_Landrace_v2.0/"
+        self.remote_filename = "GCF_054392235.1_Sscrofa_HxYL_maternal_Yorkshire_Landrace_v2.0_genomic.fna.gz"
         self.host_name = "sus_scrofa"
         self.common_name = "pig"
 
@@ -128,8 +128,8 @@ class OncorhynchusMykiss(Host):
 class SalmoSalar(Host):
     def __init__(self):
         self.remote_host = "ftp.ncbi.nlm.nih.gov"
-        self.remote_path = "genomes/refseq/vertebrate_other/Salmo_salar/latest_assembly_versions/GCF_905237065.1_Ssal_v3.1/"
-        self.remote_filename = "GCF_905237065.1_Ssal_v3.1_genomic.fna.gz "
+        self.remote_path = "genomes/refseq/vertebrate_other/Salmo_salar/latest_assembly_versions/GCF_965601325.1_fSalSal1/"
+        self.remote_filename = "GCF_965601325.1_fSalSal1_genomic.fna.gz"
         self.host_name = "salmo_salar"
         self.common_name = "atlantic_salmon"
 
