@@ -1385,7 +1385,14 @@ class setup_install(setup_dl):
             os.system(" ".join(seqmap_command) + f" > {odir}{dbname}.seq2taxid.map")
 
             # iterate over .fna files and concatenate them into one file
+            if not os.path.isdir(sdir):
+                logging.info(
+                    f"centrifuge download produced nothing in {sdir}, skipping {dbname}"
+                )
+                return False
+
             fna_files = [f for f in os.listdir(sdir) if f.endswith(".fna")]
+
             for f in fna_files:
                 os.system(f"cat {sdir}/{f} >> {sdir}/complete.fna")
             #
