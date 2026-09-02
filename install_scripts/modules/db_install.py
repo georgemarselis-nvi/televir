@@ -313,7 +313,7 @@ class setup_dl:
 
         try:
             subprocess.run(
-                ["wget", f"ftp://{host}/{source}", "-P", self.seqdir],
+                ["wget", f"https://{host}/{source}", "-P", self.seqdir],
                 check=False,
             )
         except subprocess.CalledProcessError:
@@ -340,21 +340,6 @@ class setup_dl:
             logging.info(f"{filename} found.")
             return True
 
-        try:
-            ftp = FTP(host)
-        except Exception as e:
-            logging.info(f"{fname} ftp attempt failed. Check internet connection.")
-            return False
-
-        ftp.login()
-        ftp.cwd(source)
-        files = ftp.nlst()
-        ftp.quit()
-
-        if filename not in files:
-            logging.info(f"{filename} not found.")
-            return False
-
         if not os.path.isfile(self.seqdir + filename):
             if self.test:
                 logging.info(f"{filename} not found.")
@@ -367,7 +352,7 @@ class setup_dl:
                     subprocess.run(
                         [
                             "wget",
-                            f"ftp://{host}{sep}{source}{filename}",
+                            f"https://{host}{sep}{source}{filename}",
                             "-P",
                             self.seqdir,
                         ],
