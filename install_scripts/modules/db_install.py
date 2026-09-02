@@ -8,7 +8,6 @@ import re
 import shutil
 import subprocess
 import urllib.request
-from ftplib import FTP
 from pathlib import Path
 from random import randint
 from threading import Thread
